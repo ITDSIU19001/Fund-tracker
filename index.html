@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💰 Fund Tracker — Tích tiền</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0b1120; --card:#131c2e; --card-2:#1a2740;
+    --text:#e2e8f0; --muted:#94a3b8;
+    --border:rgba(255,255,255,.08);
+    --accent:#10b981; --accent-2:#3b82f6;
+    --danger:#ef4444; --warning:#f59e0b;
+    --radius:16px;
+  }
+  [data-theme="light"]{
+    --bg:#f1f5f9; --card:#ffffff; --card-2:#f8fafc;
+    --text:#0f172a; --muted:#64748b;
+    --border:rgba(0,0,0,.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:var(--bg);
+    background-image:radial-gradient(circle at 20% 0%,rgba(16,185,129,.12),transparent 40%),
+                     radial-gradient(circle at 80% 100%,rgba(59,130,246,.10),transparent 40%);
+    color:var(--text); min-height:100vh; transition:background .3s,color .3s;
+    overflow-x:hidden;
+  }
+  .app{max-width:860px;margin:0 auto;padding:20px 16px 100px;position:relative;z-index:2}
+
+  /* ============ BACKGROUND FLOATING DECORATIONS ============ */
+  #bgDecorations{
+    position:fixed;inset:0;pointer-events:none;z-index:1;overflow:hidden;
+  }
+  .bg-decoration{
+    position:absolute;bottom:-60px;
+    animation:floatUp linear infinite;
+    filter:blur(.5px);
+  }
+  @keyframes floatUp{
+    0%   { transform:translateY(0) rotate(0deg) scale(.6); opacity:0; }
+    10%  { opacity:.18; }
+    90%  { opacity:.18; }
+    100% { transform:translateY(-110vh) rotate(360deg) scale(1); opacity:0; }
+  }
+
+  /* Header */
+  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+  .brand{font-size:20px;font-weight:800;letter-spacing:-.5px}
+  .header-actions{display:flex;gap:8px}
+  .icon-btn{
+    background:var(--card);border:1px solid var(--border);color:var(--text);
+    width:38px;height:38px;border-radius:10px;cursor:pointer;font-size:16px;
+    display:grid;place-items:center;transition:.2s;
+  }
+  .icon-btn:hover{background:var(--card-2);transform:translateY(-1px)}
+
+  /* Tabs */
+  .fund-tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:10px;margin-bottom:16px;scrollbar-width:none}
+  .fund-tabs::-webkit-scrollbar{display:none}
+  .tab{
+    white-space:nowrap;background:var(--card);border:1px solid var(--border);
+    color:var(--muted);padding:9px 16px;border-radius:999px;cursor:pointer;
+    font-size:14px;font-weight:600;transition:.2s;
+  }
+  .tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  /* Card */
+  .card{
+    background:var(--card);border:1px solid var(--border);
+    border-radius:var(--radius);padding:20px;margin-bottom:16px;
+    box-shadow:0 4px 20px rgba(0,0,0,.08);position:relative;overflow:hidden;
+  }
+  h3{font-size:15px;font-weight:700;margin-bottom:14px}
+
+  /* ============ PIGGY MASCOT ============ */
+  .mascot-wrap{
+    display:flex;justify-content:center;align-items:center;
+    padding:8px 0 4px;position:relative;min-height:120px;
+  }
+  .mascot{
+    width:140px;height:130px;position:relative;cursor:pointer;
+    animation:piggyIdle 3.2s ease-in-out infinite;
+    filter:drop-shadow(0 10px 20px rgba(255,155,175,.35));
+    transition:transform .3s;
+  }
+  .mascot:hover{transform:scale(1.06)}
+  .mascot svg{
+    width:100%;height:100%;
+    transform:scale(var(--piggy-scale,1));
+    transition:transform .6s cubic-bezier(.34,1.56,.64,1);
+    overflow:visible;
+  }
+  .mascot.happy{animation:piggyHappy .7s cubic-bezier(.34,1.56,.64,1)}
+  .mascot.happy svg{--piggy-scale:1.12}
+
+  @keyframes piggyIdle{
+    0%,100%{transform:translateY(0) rotate(-1.5deg)}
+    50%    {transform:translateY(-5px) rotate(1.5deg)}
+  }
+  @keyframes piggyHappy{
+    0%  {transform:translateY(0) scale(1) rotate(0)}
+    35% {transform:translateY(-25px) scale(1.15) rotate(10deg)}
+    65% {transform:translateY(-8px) scale(.95) rotate(-6deg)}
+    100%{transform:translateY(0) scale(1) rotate(0)}
+  }
+
+  /* Eyes blink */
+  .mascot .eye{animation:blink 4.5s infinite;transform-origin:center}
+  .mascot .eye-right{animation-delay:.1s}
+  @keyframes blink{
+    0%,88%,100%{transform:scaleY(1)}
+    92%        {transform:scaleY(.1)}
+  }
+
+  /* Sparkles overlay */
+  .mascot .sparkles{opacity:0;transition:opacity .4s}
+  .mascot.complete .sparkles{opacity:1;animation:sparklePulse 1.6s ease-in-out infinite}
+  @keyframes sparklePulse{
+    0%,100%{transform:scale(.9);opacity:.7}
+    50%    {transform:scale(1.15);opacity:1}
+  }
+  .mascot .crown{opacity:0;transform:translateY(10px);transition:.5s}
+  .mascot.complete .crown{opacity:1;transform:translateY(0);animation:crownBob 2s ease-in-out infinite}
+  @keyframes crownBob{
+    0%,100%{transform:translateY(0) rotate(-3deg)}
+    50%    {transform:translateY(-4px) rotate(3deg)}
+  }
+
+  /* Coin drop */
+  .coin-drop{
+    position:absolute;font-size:26px;pointer-events:none;z-index:10;
+    animation:coinFall 1s cubic-bezier(.5,0,.75,0) forwards;
+    filter:drop-shadow(0 2px 6px rgba(0,0,0,.3));
+  }
+  @keyframes coinFall{
+    0%  {top:-10px;opacity:0;transform:rotate(0) scale(.7)}
+    15% {opacity:1}
+    70% {top:55%;opacity:1;transform:rotate(360deg) scale(1)}
+    100%{top:70%;opacity:0;transform:rotate(720deg) scale(.4)}
+  }
+
+  /* Sparkle burst particles */
+  .sparkle-particle{
+    position:fixed;font-size:16px;pointer-events:none;z-index:9998;
+    animation:sparkleOut .9s ease-out forwards;
+  }
+  @keyframes sparkleOut{
+    0%  {transform:translate(0,0) scale(1);opacity:1}
+    100%{transform:translate(var(--dx),var(--dy)) scale(0);opacity:0}
+  }
+
+  /* Hero */
+  .hero-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px}
+  .hero-top h2{font-size:22px;font-weight:800;letter-spacing:-.5px}
+  .muted{color:var(--muted);font-size:13px;margin-top:4px}
+  .hero-actions{display:flex;gap:6px}
+  .hero-actions button{
+    background:var(--card-2);border:1px solid var(--border);color:var(--text);
+    padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;
+  }
+  .hero-actions button:hover{background:var(--border)}
+
+  /* ============ PROGRESS BAR + WALKER ============ */
+  .progress-wrap{position:relative;padding:14px 0;margin-top:2px}
+  .progress-bar{
+    height:14px;background:var(--card-2);border-radius:999px;overflow:hidden;
+    border:1px solid var(--border);
+  }
+  .progress-fill{
+    height:100%;width:0%;border-radius:999px;
+    background:linear-gradient(90deg,#10b981,#34d399,#3b82f6);
+    transition:width .9s cubic-bezier(.4,0,.2,1);
+    box-shadow:0 0 20px rgba(16,185,129,.4);
+  }
+  .progress-walker{
+    position:absolute;top:50%;left:0;
+    font-size:22px;
+    transform:translate(-50%,-50%) scaleX(-1);
+    transition:left .9s cubic-bezier(.4,0,.2,1);
+    z-index:2;pointer-events:none;
+    filter:drop-shadow(0 3px 6px rgba(0,0,0,.35));
+    animation:walkerBob .6s ease-in-out infinite;
+  }
+  @keyframes walkerBob{
+    0%,100%{transform:translate(-50%,-50%) scaleX(-1) translateY(0)}
+    50%    {transform:translate(-50%,-50%) scaleX(-1) translateY(-3px)}
+  }
+  .progress-labels{display:flex;justify-content:space-between;margin-top:8px;font-size:13px;font-weight:600}
+  #progressPercent{color:var(--accent);font-size:16px;font-weight:800}
+  #progressPercent.complete{
+    background:linear-gradient(90deg,#10b981,#f59e0b,#ec4899);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+    animation:rainbowText 3s linear infinite;
+    background-size:200% auto;
+  }
+  @keyframes rainbowText{to{background-position:200% center}}
+
+  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:18px}
+  .stat{background:var(--card-2);border-radius:10px;padding:12px}
+  .stat-label{display:block;font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+  .stat-value{display:block;font-size:16px;font-weight:800;margin-top:4px}
+
+  /* Chart */
+  .card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .card-head h3{margin:0}
+  .segmented{display:flex;background:var(--card-2);border-radius:8px;padding:3px}
+  .segmented button{
+    background:none;border:none;color:var(--muted);padding:6px 12px;
+    border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;
+  }
+  .segmented button.active{background:var(--accent);color:#fff}
+  .chart-box{height:260px;position:relative}
+
+  /* Form */
+  .row{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+  .row > *{flex:1;min-width:140px}
+  input,select{
+    width:100%;background:var(--card-2);border:1px solid var(--border);
+    color:var(--text);padding:12px 14px;border-radius:10px;font-size:14px;
+    font-family:inherit;outline:none;transition:.2s;
+  }
+  input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(16,185,129,.15)}
+  .btn-primary{
+    width:100%;background:var(--accent);color:#fff;border:none;
+    padding:13px;border-radius:10px;font-size:15px;font-weight:700;
+    cursor:pointer;transition:.2s;margin-top:4px;
+  }
+  .btn-primary:hover{background:#059669;transform:translateY(-1px)}
+  .btn-ghost{
+    background:var(--card-2);border:1px solid var(--border);color:var(--text);
+    padding:13px 20px;border-radius:10px;font-weight:700;cursor:pointer;
+  }
+
+  /* Transaction list */
+  .tx-item{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:12px 0;border-bottom:1px solid var(--border);
+  }
+  .tx-item:last-child{border-bottom:none}
+  .tx-info{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+  .tx-date{font-size:12px;color:var(--muted);font-weight:600}
+  .tx-note{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tx-right{display:flex;align-items:center;gap:10px}
+  .tx-amount{font-weight:800;font-size:14px;white-space:nowrap}
+  .tx-amount.plus{color:var(--accent)}
+  .tx-amount.minus{color:var(--danger)}
+  .tx-right .icon-btn{width:30px;height:30px;font-size:12px}
+  .empty{color:var(--muted);text-align:center;padding:20px;font-size:14px}
+
+  /* Cute empty state */
+  .empty-hero{
+    text-align:center;padding:16px 0 8px;
+  }
+  .empty-hero .zzz{
+    font-size:36px;
+    animation:zzz 2s ease-in-out infinite;
+    display:inline-block;
+  }
+  @keyframes zzz{
+    0%,100%{transform:translateY(0) rotate(-8deg);opacity:.5}
+    50%    {transform:translateY(-10px) rotate(8deg);opacity:1}
+  }
+
+  /* Modal */
+  .modal{
+    position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);
+    display:none;align-items:center;justify-content:center;padding:20px;z-index:100;
+  }
+  .modal.show{display:flex}
+  .modal-content{
+    background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+    padding:24px;width:100%;max-width:400px;animation:pop .2s ease;
+  }
+  @keyframes pop{from{transform:scale(.95);opacity:0}to{transform:scale(1);opacity:1}}
+  .modal-content h3{margin-bottom:16px;font-size:18px}
+  .modal-content label{display:block;font-size:12px;color:var(--muted);font-weight:600;margin-bottom:6px;margin-top:12px}
+  .modal-actions{display:flex;gap:10px;margin-top:20px}
+  .modal-actions button{flex:1;margin:0}
+
+  /* FAB */
+  .fab{
+    position:fixed;bottom:24px;right:24px;width:56px;height:56px;
+    border-radius:50%;background:var(--accent);color:#fff;border:none;
+    font-size:28px;font-weight:300;cursor:pointer;z-index:50;
+    box-shadow:0 8px 24px rgba(16,185,129,.4);transition:.2s;
+    display:grid;place-items:center;
+  }
+  .fab:hover{transform:scale(1.08) rotate(90deg)}
+
+  /* Confetti */
+  .confetti{position:fixed;top:-10px;z-index:9999;pointer-events:none;
+    animation:fall 2s linear forwards}
+  @keyframes fall{to{transform:translateY(100vh) rotate(720deg);opacity:0}}
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce){
+    .mascot,.bg-decoration,.coin-drop,.confetti,.progress-walker,.empty-hero .zzz{
+      animation:none !important;
+    }
+    .progress-fill,.progress-walker,.mascot svg{transition:none !important}
+  }
+</style>
+</head>
+<body>
+
+<div id="bgDecorations"></div>
+
+<div class="app">
+  <header>
+    <div class="brand">💰 Fund Tracker</div>
+    <div class="header-actions">
+      <button class="icon-btn" id="themeBtn" title="Đổi theme">☀️</button>
+      <button class="icon-btn" id="exportBtn" title="Xuất dữ liệu">⬇️</button>
+      <button class="icon-btn" id="importBtn" title="Nhập dữ liệu">⬆️</button>
+      <input type="file" id="importFile" hidden accept=".json">
+    </div>
+  </header>
+
+  <div class="fund-tabs" id="fundTabs"></div>
+
+  <main>
+    <section class="card">
+      <div class="hero-top">
+        <div>
+          <h2 id="fundName">Chưa có fund nào</h2>
+          <p class="muted" id="fundDeadline">Nhấn nút + để tạo fund đầu tiên</p>
+        </div>
+        <div class="hero-actions">
+          <button id="editFundBtn" style="display:none">Sửa</button>
+          <button id="deleteFundBtn" style="display:none">Xóa</button>
+        </div>
+      </div>
+
+      <!-- ============ MASCOT ============ -->
+      <div class="mascot-wrap" id="mascotWrap">
+        <div class="mascot" id="mascot">
+          <svg viewBox="0 0 200 180" xmlns="http://www.w3.org/2000/svg">
+            <!-- Crown (hidden until 100%) -->
+            <g class="crown">
+              <path d="M 75 42 L 85 20 L 100 35 L 115 20 L 125 42 Z"
+                    fill="#fbbf24" stroke="#d97706" stroke-width="2" stroke-linejoin="round"/>
+              <circle cx="85" cy="20" r="3" fill="#fde68a"/>
+              <circle cx="100" cy="35" r="3" fill="#fde68a"/>
+              <circle cx="115" cy="20" r="3" fill="#fde68a"/>
+            </g>
+
+            <!-- Tail -->
+            <path d="M 168 105 Q 190 95 185 78 Q 180 62 195 60"
+                  stroke="#ff9fb0" stroke-width="6" fill="none" stroke-linecap="round"/>
+
+            <!-- Body -->
+            <ellipse cx="100" cy="115" rx="75" ry="55" fill="#ffb8c8"/>
+
+            <!-- Ears -->
+            <path d="M 55 70 Q 42 42 68 48 Q 76 54 72 78 Z" fill="#ff9fb0"/>
+            <path d="M 145 70 Q 158 42 132 48 Q 124 54 128 78 Z" fill="#ff9fb0"/>
+
+            <!-- Legs -->
+            <rect x="55" y="155" width="20" height="22" rx="7" fill="#ff9fb0"/>
+            <rect x="125" y="155" width="20" height="22" rx="7" fill="#ff9fb0"/>
+
+            <!-- Coin slot -->
+            <rect x="80" y="66" width="40" height="8" rx="4" fill="#c97a8a"/>
+
+            <!-- Snout -->
+            <ellipse cx="100" cy="130" rx="22" ry="17" fill="#ff9fb0"/>
+            <ellipse cx="93" cy="130" rx="3.5" ry="5" fill="#d97a8a"/>
+            <ellipse cx="107" cy="130" rx="3.5" ry="5" fill="#d97a8a"/>
+
+            <!-- Eyes -->
+            <g class="eye eye-left">
+              <circle cx="78" cy="108" r="7" fill="#3a2a2a"/>
+              <circle cx="80" cy="106" r="2.5" fill="#fff"/>
+            </g>
+            <g class="eye eye-right">
+              <circle cx="122" cy="108" r="7" fill="#3a2a2a"/>
+              <circle cx="124" cy="106" r="2.5" fill="#fff"/>
+            </g>
+
+            <!-- Cheeks -->
+            <ellipse cx="64" cy="122" rx="10" ry="6" fill="#ff7a95" opacity=".45"/>
+            <ellipse cx="136" cy="122" rx="10" ry="6" fill="#ff7a95" opacity=".45"/>
+
+            <!-- Sparkles (visible at 100%) -->
+            <g class="sparkles">
+              <text x="18" y="55" font-size="22">✨</text>
+              <text x="162" y="42" font-size="18">⭐</text>
+              <text x="168" y="140" font-size="16">✨</text>
+            </g>
+          </svg>
+        </div>
+      </div>
+
+      <!-- ============ PROGRESS WITH WALKER ============ -->
+      <div class="progress-wrap">
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-walker" id="walker">🐷</div>
+      </div>
+
+      <div class="progress-labels">
+        <span id="progressPercent">0%</span>
+        <span id="progressAmounts">0 đ / 0 đ</span>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat"><span class="stat-label">Đã tích</span><span class="stat-value" id="statSaved">—</span></div>
+        <div class="stat"><span class="stat-label">Còn lại</span><span class="stat-value" id="statRemaining">—</span></div>
+        <div class="stat"><span class="stat-label">TB / tháng</span><span class="stat-value" id="statAvg">—</span></div>
+        <div class="stat"><span class="stat-label">Dự kiến xong</span><span class="stat-value" id="statEta">—</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h3>Biểu đồ tích lũy</h3>
+        <div class="segmented" id="chartToggle">
+          <button data-mode="cumulative" class="active">Tích lũy</button>
+          <button data-mode="monthly">Theo tháng</button>
+        </div>
+      </div>
+      <div class="chart-box"><canvas id="chart"></canvas></div>
+    </section>
+
+    <section class="card">
+      <h3>Thêm giao dịch</h3>
+      <form id="txForm">
+        <div class="row">
+          <input type="text" id="txAmount" placeholder="Số tiền (VD: 500000)" inputmode="numeric" required>
+          <input type="date" id="txDate" required>
+        </div>
+        <div class="row">
+          <select id="txType">
+            <option value="1">Góp tiền (+)</option>
+            <option value="-1">Rút tiền (−)</option>
+          </select>
+          <input type="text" id="txNote" placeholder="Ghi chú (tuỳ chọn)">
+        </div>
+        <button type="submit" class="btn-primary">Thêm giao dịch</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h3>Lịch sử giao dịch</h3>
+      <div id="txList"></div>
+    </section>
+  </main>
+
+  <button class="fab" id="newFundBtn" title="Tạo fund mới">+</button>
+</div>
+
+<div class="modal" id="fundModal">
+  <div class="modal-content">
+    <h3 id="modalTitle">Tạo fund mới</h3>
+    <form id="fundForm">
+      <label>Tên fund</label>
+      <input type="text" id="fundNameInput" placeholder="VD: Mua xe, Du lịch..." required>
+      <label>Mục tiêu (VNĐ)</label>
+      <input type="text" id="fundTargetInput" placeholder="VD: 50000000" inputmode="numeric" required>
+      <label>Hạn chót (tuỳ chọn)</label>
+      <input type="date" id="fundDeadlineInput">
+      <div class="modal-actions">
+        <button type="button" class="btn-ghost" id="cancelFundBtn">Hủy</button>
+        <button type="submit" class="btn-primary">Lưu</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+/* ============ STATE ============ */
+const LS_KEY = 'fund-tracker-v1';
+let state = { funds: [], transactions: [], activeFundId: null, theme: 'dark', chartMode: 'cumulative' };
+let chartInstance = null;
+let editingFundId = null;
+
+/* ============ HELPERS ============ */
+const fmt = n => new Intl.NumberFormat('vi-VN').format(Math.round(n || 0));
+const fmtMoney = n => fmt(n) + ' đ';
+const uid = () => Math.random().toString(36).slice(2, 10);
+const todayStr = () => new Date().toISOString().slice(0, 10);
+const escapeHtml = s => String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function load() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) state = { ...state, ...JSON.parse(raw) };
+  } catch (e) {}
+}
+function save() { localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+
+function attachMoneyFormat(input) {
+  input.addEventListener('input', () => {
+    const digits = input.value.replace(/\D/g, '');
+    input.value = digits ? fmt(Number(digits)) : '';
+  });
+}
+
+/* ============ BACKGROUND DECORATIONS ============ */
+function createBgDecorations() {
+  const container = document.getElementById('bgDecorations');
+  const emojis = ['🪙','💰','💵','⭐','💖','✨','🌟','💫'];
+  for (let i = 0; i < 10; i++) {
+    const el = document.createElement('div');
+    el.className = 'bg-decoration';
+    el.textContent = emojis[i % emojis.length];
+    el.style.left = (Math.random() * 100) + '%';
+    el.style.fontSize = (16 + Math.random() * 18) + 'px';
+    el.style.animationDuration = (14 + Math.random() * 12) + 's';
+    el.style.animationDelay = (Math.random() * 14) + 's';
+    container.appendChild(el);
+  }
+}
+
+/* ============ CUTE ANIMATIONS ============ */
+function dropCoin() {
+  const wrap = document.getElementById('mascotWrap');
+  const coin = document.createElement('div');
+  coin.className = 'coin-drop';
+  coin.textContent = Math.random() > .5 ? '🪙' : '💰';
+  coin.style.left = (44 + Math.random() * 14) + '%';
+  wrap.appendChild(coin);
+  setTimeout(() => coin.remove(), 1100);
+}
+
+function piggyHappy() {
+  const m = document.getElementById('mascot');
+  m.classList.remove('happy');
+  void m.offsetWidth;
+  m.classList.add('happy');
+}
+
+function sparkleBurst() {
+  const wrap = document.getElementById('mascotWrap');
+  const rect = wrap.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+
+  for (let i = 0; i < 10; i++) {
+    const el = document.createElement('div');
+    el.className = 'sparkle-particle';
+    el.textContent = ['✨','⭐','💖'][i % 3];
+    el.style.left = cx + 'px';
+    el.style.top = cy + 'px';
+    const angle = (i / 10) * Math.PI * 2;
+    const dist = 60 + Math.random() * 40;
+    el.style.setProperty('--dx', (Math.cos(angle) * dist) + 'px');
+    el.style.setProperty('--dy', (Math.sin(angle) * dist) + 'px');
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 950);
+  }
+}
+
+function updatePiggyScale(percent) {
+  const mascot = document.getElementById('mascot');
+  const scale = 0.85 + (Math.min(100, percent) / 100) * 0.3;
+  mascot.querySelector('svg').style.setProperty('--piggy-scale', scale);
+  mascot.classList.toggle('complete', percent >= 100);
+}
+
+/* ============ DATA QUERIES ============ */
+function getActiveFund() {
+  let f = state.funds.find(f => f.id === state.activeFundId);
+  if (!f && state.funds.length) { f = state.funds[0]; state.activeFundId = f.id; }
+  return f || null;
+}
+
+function fundTxs(fundId) {
+  return state.transactions
+    .filter(t => t.fundId === fundId)
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function fundStats(fund) {
+  const txs = fundTxs(fund.id);
+  const saved = txs.reduce((s, t) => s + t.amount, 0);
+  const percent = fund.target > 0 ? (saved / fund.target) * 100 : 0;
+  const remaining = Math.max(0, fund.target - saved);
+
+  let avgPerMonth = 0;
+  const positives = txs.filter(t => t.amount > 0);
+  if (positives.length) {
+    const first = new Date(positives[0].date);
+    const now = new Date();
+    const months = Math.max(1, (now.getFullYear() - first.getFullYear()) * 12 + (now.getMonth() - first.getMonth()) + 1);
+    avgPerMonth = positives.reduce((s, t) => s + t.amount, 0) / months;
+  }
+
+  let eta = 'Chưa đủ dữ liệu';
+  if (remaining === 0 && fund.target > 0) eta = 'Đã xong 🎉';
+  else if (avgPerMonth > 0) {
+    const days = Math.ceil((remaining / avgPerMonth) * 30);
+    const d = new Date(); d.setDate(d.getDate() + days);
+    eta = d.toLocaleDateString('vi-VN');
+  }
+
+  return { saved, percent, remaining, avgPerMonth, eta, txs };
+}
+
+/* ============ RENDER ============ */
+function renderTabs() {
+  const el = document.getElementById('fundTabs');
+  if (!state.funds.length) { el.innerHTML = ''; return; }
+  el.innerHTML = state.funds.map(f => `
+    <button class="tab ${f.id === state.activeFundId ? 'active' : ''}" data-id="${f.id}">
+      ${escapeHtml(f.name)}
+    </button>`).join('');
+  el.querySelectorAll('.tab').forEach(btn => {
+    btn.onclick = () => { state.activeFundId = btn.dataset.id; save(); renderAll(); };
+  });
+}
+
+function renderHero(fund, stats) {
+  const nameEl = document.getElementById('fundName');
+  const deadlineEl = document.getElementById('fundDeadline');
+  const fill = document.getElementById('progressFill');
+  const pct = document.getElementById('progressPercent');
+  const amts = document.getElementById('progressAmounts');
+  const walker = document.getElementById('walker');
+
+  if (!fund) {
+    nameEl.textContent = 'Chưa có fund nào 🐷💤';
+    deadlineEl.textContent = 'Nhấn nút + để tạo fund đầu tiên';
+    fill.style.width = '0%';
+    pct.textContent = '0%';
+    pct.classList.remove('complete');
+    amts.textContent = '0 đ / 0 đ';
+    walker.style.left = '0%';
+    walker.textContent = '😴';
+    ['statSaved','statRemaining','statAvg','statEta'].forEach(id => document.getElementById(id).textContent = '—');
+    document.getElementById('editFundBtn').style.display = 'none';
+    document.getElementById('deleteFundBtn').style.display = 'none';
+    updatePiggyScale(0);
+    return;
+  }
+
+  document.getElementById('editFundBtn').style.display = '';
+  document.getElementById('deleteFundBtn').style.display = '';
+  nameEl.textContent = fund.name;
+
+  let dl = fund.deadline ? `Hạn: ${new Date(fund.deadline).toLocaleDateString('vi-VN')}` : 'Không có hạn';
+  if (fund.deadline && stats.remaining > 0) {
+    const days = Math.max(1, Math.ceil((new Date(fund.deadline) - new Date()) / 86400000));
+    const months = Math.max(1, days / 30);
+    dl += ` · Cần ${fmtMoney(stats.remaining / months)}/tháng`;
+  }
+  deadlineEl.textContent = dl;
+
+  const clamped = Math.min(100, Math.max(0, stats.percent));
+  fill.style.width = clamped + '%';
+  fill.style.background = stats.percent >= 100
+    ? 'linear-gradient(90deg,#10b981,#34d399,#fbbf24)'
+    : 'linear-gradient(90deg,#10b981,#34d399,#3b82f6)';
+  pct.textContent = stats.percent.toFixed(1) + '%';
+  pct.classList.toggle('complete', stats.percent >= 100);
+  amts.textContent = `${fmtMoney(stats.saved)} / ${fmtMoney(fund.target)}`;
+
+  walker.style.left = clamped + '%';
+  walker.textContent = stats.percent >= 100 ? '👑' : stats.percent >= 50 ? '🐖' : stats.percent > 0 ? '🐷' : '😴';
+
+  document.getElementById('statSaved').textContent = fmtMoney(stats.saved);
+  document.getElementById('statRemaining').textContent = fmtMoney(stats.remaining);
+  document.getElementById('statAvg').textContent = fmtMoney(stats.avgPerMonth);
+  document.getElementById('statEta').textContent = stats.eta;
+
+  updatePiggyScale(stats.percent);
+}
+
+function renderChart(fund, txs) {
+  const ctx = document.getElementById('chart');
+  if (chartInstance) chartInstance.destroy();
+
+  const isDark = document.documentElement.dataset.theme === 'dark';
+  const gridColor = isDark ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.07)';
+  const textColor = isDark ? '#94a3b8' : '#64748b';
+
+  let labels = [], data = [];
+
+  if (state.chartMode === 'cumulative') {
+    let cum = 0;
+    labels = txs.map(t => new Date(t.date).toLocaleDateString('vi-VN'));
+    data = txs.map(t => (cum += t.amount));
+    if (!labels.length) { labels = [todayStr()]; data = [0]; }
+  } else {
+    const map = new Map();
+    txs.forEach(t => {
+      const key = t.date.slice(0, 7);
+      map.set(key, (map.get(key) || 0) + t.amount);
+    });
+    const keys = [...map.keys()].sort();
+    labels = keys.map(k => { const [y, m] = k.split('-'); return `${m}/${y}`; });
+    data = keys.map(k => map.get(k));
+    if (!labels.length) { labels = [todayStr().slice(0, 7).split('-').reverse().join('/')]; data = [0]; }
+  }
+
+  const isLine = state.chartMode === 'cumulative';
+  chartInstance = new Chart(ctx, {
+    type: isLine ? 'line' : 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: isLine ? 'Tích lũy' : 'Theo tháng',
+        data,
+        borderColor: '#10b981',
+        backgroundColor: isLine ? 'rgba(16,185,129,.15)' : 'rgba(16,185,129,.65)',
+        fill: isLine,
+        tension: .35,
+        pointRadius: 4,
+        pointBackgroundColor: '#10b981',
+        borderRadius: 6,
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => fmtMoney(c.parsed.y) } }
+      },
+      scales: {
+        x: { ticks: { color: textColor, maxRotation: 0, autoSkip: true }, grid: { color: gridColor } },
+        y: { ticks: { color: textColor, callback: v => fmt(v) }, grid: { color: gridColor } }
+      }
+    }
+  });
+}
+
+function renderTxList(fund, txs) {
+  const el = document.getElementById('txList');
+  if (!txs.length) {
+    el.innerHTML = '<p class="empty">🐣 Chưa có giao dịch nào. Thêm giao dịch đầu tiên nào! 🚀</p>';
+    return;
+  }
+  el.innerHTML = [...txs].reverse().map(t => `
+    <div class="tx-item">
+      <div class="tx-info">
+        <span class="tx-date">${new Date(t.date).toLocaleDateString('vi-VN')}</span>
+        <span class="tx-note">${escapeHtml(t.note || '(không ghi chú)')}</span>
+      </div>
+      <div class="tx-right">
+        <span class="tx-amount ${t.amount >= 0 ? 'plus' : 'minus'}">
+          ${t.amount >= 0 ? '+' : '−'}${fmtMoney(Math.abs(t.amount))}
+        </span>
+        <button class="icon-btn" data-del="${t.id}" title="Xóa">✕</button>
+      </div>
+    </div>`).join('');
+
+  el.querySelectorAll('[data-del]').forEach(btn => {
+    btn.onclick = () => {
+      if (confirm('Xóa giao dịch này?')) {
+        state.transactions = state.transactions.filter(t => t.id !== btn.dataset.del);
+        save(); renderAll();
+      }
+    };
+  });
+}
+
+function renderAll() {
+  const fund = getActiveFund();
+  renderTabs();
+
+  document.querySelectorAll('#chartToggle button').forEach(b =>
+    b.classList.toggle('active', b.dataset.mode === state.chartMode));
+
+  if (!fund) {
+    renderHero(null, null);
+    renderChart(null, []);
+    renderTxList(null, []);
+    return;
+  }
+  const stats = fundStats(fund);
+  renderHero(fund, stats);
+  renderChart(fund, stats.txs);
+  renderTxList(fund, stats.txs);
+}
+
+/* ============ ACTIONS ============ */
+function checkMilestone(before, after) {
+  const marks = [25, 50, 75, 100];
+  for (const m of marks) {
+    if (before < m && after >= m) { fireConfetti(); sparkleBurst(); break; }
+  }
+}
+
+function fireConfetti() {
+  const colors = ['#10b981','#3b82f6','#f59e0b','#ef4444','#8b5cf6','#ec4899'];
+  const emojis = ['💰','🎉','⭐','💖','🪙','✨','🌟'];
+  for (let i = 0; i < 60; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti';
+    el.style.left = Math.random() * 100 + 'vw';
+    el.style.animationDelay = (Math.random() * 0.4) + 's';
+    el.style.animationDuration = (1.6 + Math.random() * 1.2) + 's';
+
+    if (Math.random() > 0.5) {
+      el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+      el.style.fontSize = (16 + Math.random() * 10) + 'px';
+    } else {
+      el.style.background = colors[Math.floor(Math.random() * colors.length)];
+      el.style.width = (6 + Math.random() * 8) + 'px';
+      el.style.height = (6 + Math.random() * 8) + 'px';
+      el.style.borderRadius = '2px';
+    }
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2600);
+  }
+}
+
+/* ============ FORM: TRANSACTION ============ */
+document.getElementById('txForm').onsubmit = e => {
+  e.preventDefault();
+  const fund = getActiveFund();
+  if (!fund) { alert('Hãy tạo fund trước nhé! 🐷'); return; }
+
+  const amountRaw = document.getElementById('txAmount').value.replace(/\D/g, '');
+  const typeMultiplier = Number(document.getElementById('txType').value);
+  const amount = Number(amountRaw) * typeMultiplier;
+  const date = document.getElementById('txDate').value || todayStr();
+  const note = document.getElementById('txNote').value.trim();
+  if (!amount) return;
+
+  const before = fundStats(fund).percent;
+  state.transactions.push({ id: uid(), fundId: fund.id, amount, date, note });
+  save();
+  const after = fundStats(fund).percent;
+
+  // 🎬 Cute animations
+  if (amount > 0) {
+    dropCoin();
+    piggyHappy();
+    setTimeout(sparkleBurst, 200);
+  } else {
+    piggyHappy();
+  }
+  checkMilestone(before, after);
+
+  e.target.reset();
+  document.getElementById('txDate').value = todayStr();
+  renderAll();
+};
+
+/* ============ FUND MODAL ============ */
+function openFundModal(fund = null) {
+  editingFundId = fund?.id || null;
+  document.getElementById('modalTitle').textContent = fund ? 'Sửa fund' : 'Tạo fund mới 🐷';
+  document.getElementById('fundNameInput').value = fund?.name || '';
+  document.getElementById('fundTargetInput').value = fund ? fmt(fund.target) : '';
+  document.getElementById('fundDeadlineInput').value = fund?.deadline || '';
+  document.getElementById('fundModal').classList.add('show');
+}
+function closeFundModal() {
+  document.getElementById('fundModal').classList.remove('show');
+  editingFundId = null;
+}
+
+document.getElementById('newFundBtn').onclick = () => openFundModal();
+document.getElementById('cancelFundBtn').onclick = closeFundModal;
+document.getElementById('fundModal').onclick = e => {
+  if (e.target.id === 'fundModal') closeFundModal();
+};
+document.getElementById('editFundBtn').onclick = () => {
+  const f = getActiveFund(); if (f) openFundModal(f);
+};
+document.getElementById('deleteFundBtn').onclick = () => {
+  const f = getActiveFund(); if (!f) return;
+  if (!confirm(`Xóa fund "${f.name}" và toàn bộ giao dịch?`)) return;
+  state.funds = state.funds.filter(x => x.id !== f.id);
+  state.transactions = state.transactions.filter(t => t.fundId !== f.id);
+  state.activeFundId = state.funds[0]?.id || null;
+  save(); renderAll();
+};
+
+document.getElementById('fundForm').onsubmit = e => {
+  e.preventDefault();
+  const name = document.getElementById('fundNameInput').value.trim();
+  const target = Number(document.getElementById('fundTargetInput').value.replace(/\D/g, ''));
+  const deadline = document.getElementById('fundDeadlineInput').value || null;
+  if (!name || !target) return;
+
+  if (editingFundId) {
+    const f = state.funds.find(f => f.id === editingFundId);
+    Object.assign(f, { name, target, deadline });
+  } else {
+    const fund = { id: uid(), name, target, deadline, createdAt: new Date().toISOString() };
+    state.funds.push(fund);
+    state.activeFundId = fund.id;
+  }
+  save(); closeFundModal();
+  piggyHappy(); // celebrate new fund creation
+  renderAll();
+};
+
+/* ============ CHART TOGGLE ============ */
+document.getElementById('chartToggle').onclick = e => {
+  const btn = e.target.closest('button'); if (!btn) return;
+  state.chartMode = btn.dataset.mode;
+  save(); renderAll();
+};
+
+/* ============ THEME ============ */
+function applyTheme() {
+  document.documentElement.dataset.theme = state.theme;
+  document.getElementById('themeBtn').textContent = state.theme === 'dark' ? '☀️' : '🌙';
+}
+document.getElementById('themeBtn').onclick = () => {
+  state.theme = state.theme === 'dark' ? 'light' : 'dark';
+  save(); applyTheme(); renderAll();
+};
+
+/* ============ EXPORT / IMPORT ============ */
+document.getElementById('exportBtn').onclick = () => {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `fund-tracker-${todayStr()}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+document.getElementById('importBtn').onclick = () => document.getElementById('importFile').click();
+document.getElementById('importFile').onchange = e => {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      if (!Array.isArray(data.funds) || !Array.isArray(data.transactions)) throw 0;
+      state = { ...state, ...data };
+      save(); applyTheme(); renderAll();
+      piggyHappy();
+      alert('Nhập dữ liệu thành công! 🎉');
+    } catch { alert('File không hợp lệ'); }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+};
+
+/* ============ INIT ============ */
+load();
+applyTheme();
+createBgDecorations();
+attachMoneyFormat(document.getElementById('txAmount'));
+attachMoneyFormat(document.getElementById('fundTargetInput'));
+document.getElementById('txDate').value = todayStr();
+renderAll();
+
+// 🐷 Easter egg: click the piggy to make it jump
+document.getElementById('mascot').addEventListener('click', () => {
+  piggyHappy();
+  sparkleBurst();
+});
+</script>
+</body>
+</html>
