@@ -30,34 +30,39 @@
   }
   .app{max-width:860px;margin:0 auto;padding:20px 16px 100px;position:relative;z-index:2}
 
-  /* ============ BACKGROUND FLOATING DECORATIONS ============ */
-  #bgDecorations{
-    position:fixed;inset:0;pointer-events:none;z-index:1;overflow:hidden;
-  }
-  .bg-decoration{
-    position:absolute;bottom:-60px;
-    animation:floatUp linear infinite;
-    filter:blur(.5px);
-  }
+  /* Background */
+  #bgDecorations{position:fixed;inset:0;pointer-events:none;z-index:1;overflow:hidden}
+  .bg-decoration{position:absolute;bottom:-60px;animation:floatUp linear infinite;filter:blur(.5px)}
   @keyframes floatUp{
-    0%   { transform:translateY(0) rotate(0deg) scale(.6); opacity:0; }
-    10%  { opacity:.18; }
-    90%  { opacity:.18; }
-    100% { transform:translateY(-110vh) rotate(360deg) scale(1); opacity:0; }
+    0%{transform:translateY(0) rotate(0) scale(.6);opacity:0}
+    10%{opacity:.18} 90%{opacity:.18}
+    100%{transform:translateY(-110vh) rotate(360deg) scale(1);opacity:0}
   }
 
-  /* Header */
-  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:8px;flex-wrap:wrap}
   .brand{font-size:20px;font-weight:800;letter-spacing:-.5px}
-  .header-actions{display:flex;gap:8px}
+  .header-actions{display:flex;gap:6px;flex-wrap:wrap}
   .icon-btn{
     background:var(--card);border:1px solid var(--border);color:var(--text);
     width:38px;height:38px;border-radius:10px;cursor:pointer;font-size:16px;
     display:grid;place-items:center;transition:.2s;
   }
   .icon-btn:hover{background:var(--card-2);transform:translateY(-1px)}
+  .icon-btn.active{background:rgba(16,185,129,.2);border-color:var(--accent)}
 
-  /* Tabs */
+  /* Save status banner */
+  .save-banner{
+    background:var(--card);border:1px solid var(--warning);
+    border-radius:10px;padding:10px 14px;margin-bottom:12px;
+    display:none;align-items:center;justify-content:space-between;gap:10px;
+    font-size:13px;
+  }
+  .save-banner.show{display:flex}
+  .save-banner button{
+    background:var(--warning);border:none;color:#000;padding:6px 12px;
+    border-radius:8px;font-weight:700;cursor:pointer;font-size:12px;
+  }
+
   .fund-tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:10px;margin-bottom:16px;scrollbar-width:none}
   .fund-tabs::-webkit-scrollbar{display:none}
   .tab{
@@ -67,7 +72,6 @@
   }
   .tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 
-  /* Card */
   .card{
     background:var(--card);border:1px solid var(--border);
     border-radius:var(--radius);padding:20px;margin-bottom:16px;
@@ -75,127 +79,49 @@
   }
   h3{font-size:15px;font-weight:700;margin-bottom:14px}
 
-  /* ============ PIGGY MASCOT ============ */
-  .mascot-wrap{
-    display:flex;justify-content:center;align-items:center;
-    padding:8px 0 4px;position:relative;min-height:120px;
-  }
-  .mascot{
-    width:140px;height:130px;position:relative;cursor:pointer;
+  /* Mascot */
+  .mascot-wrap{display:flex;justify-content:center;align-items:center;padding:8px 0 4px;position:relative;min-height:120px}
+  .mascot{width:140px;height:130px;position:relative;cursor:pointer;
     animation:piggyIdle 3.2s ease-in-out infinite;
-    filter:drop-shadow(0 10px 20px rgba(255,155,175,.35));
-    transition:transform .3s;
-  }
+    filter:drop-shadow(0 10px 20px rgba(255,155,175,.35));transition:transform .3s}
   .mascot:hover{transform:scale(1.06)}
-  .mascot svg{
-    width:100%;height:100%;
-    transform:scale(var(--piggy-scale,1));
-    transition:transform .6s cubic-bezier(.34,1.56,.64,1);
-    overflow:visible;
-  }
+  .mascot svg{width:100%;height:100%;transform:scale(var(--piggy-scale,1));
+    transition:transform .6s cubic-bezier(.34,1.56,.64,1);overflow:visible}
   .mascot.happy{animation:piggyHappy .7s cubic-bezier(.34,1.56,.64,1)}
   .mascot.happy svg{--piggy-scale:1.12}
-
-  @keyframes piggyIdle{
-    0%,100%{transform:translateY(0) rotate(-1.5deg)}
-    50%    {transform:translateY(-5px) rotate(1.5deg)}
-  }
-  @keyframes piggyHappy{
-    0%  {transform:translateY(0) scale(1) rotate(0)}
-    35% {transform:translateY(-25px) scale(1.15) rotate(10deg)}
-    65% {transform:translateY(-8px) scale(.95) rotate(-6deg)}
-    100%{transform:translateY(0) scale(1) rotate(0)}
-  }
-
-  /* Eyes blink */
+  @keyframes piggyIdle{0%,100%{transform:translateY(0) rotate(-1.5deg)}50%{transform:translateY(-5px) rotate(1.5deg)}}
+  @keyframes piggyHappy{0%{transform:translateY(0) scale(1) rotate(0)}35%{transform:translateY(-25px) scale(1.15) rotate(10deg)}65%{transform:translateY(-8px) scale(.95) rotate(-6deg)}100%{transform:translateY(0) scale(1) rotate(0)}}
   .mascot .eye{animation:blink 4.5s infinite;transform-origin:center}
   .mascot .eye-right{animation-delay:.1s}
-  @keyframes blink{
-    0%,88%,100%{transform:scaleY(1)}
-    92%        {transform:scaleY(.1)}
-  }
-
-  /* Sparkles overlay */
+  @keyframes blink{0%,88%,100%{transform:scaleY(1)}92%{transform:scaleY(.1)}}
   .mascot .sparkles{opacity:0;transition:opacity .4s}
   .mascot.complete .sparkles{opacity:1;animation:sparklePulse 1.6s ease-in-out infinite}
-  @keyframes sparklePulse{
-    0%,100%{transform:scale(.9);opacity:.7}
-    50%    {transform:scale(1.15);opacity:1}
-  }
+  @keyframes sparklePulse{0%,100%{transform:scale(.9);opacity:.7}50%{transform:scale(1.15);opacity:1}}
   .mascot .crown{opacity:0;transform:translateY(10px);transition:.5s}
   .mascot.complete .crown{opacity:1;transform:translateY(0);animation:crownBob 2s ease-in-out infinite}
-  @keyframes crownBob{
-    0%,100%{transform:translateY(0) rotate(-3deg)}
-    50%    {transform:translateY(-4px) rotate(3deg)}
-  }
+  @keyframes crownBob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-4px) rotate(3deg)}}
+  .coin-drop{position:absolute;font-size:26px;pointer-events:none;z-index:10;animation:coinFall 1s cubic-bezier(.5,0,.75,0) forwards;filter:drop-shadow(0 2px 6px rgba(0,0,0,.3))}
+  @keyframes coinFall{0%{top:-10px;opacity:0;transform:rotate(0) scale(.7)}15%{opacity:1}70%{top:55%;opacity:1;transform:rotate(360deg) scale(1)}100%{top:70%;opacity:0;transform:rotate(720deg) scale(.4)}}
+  .sparkle-particle{position:fixed;font-size:16px;pointer-events:none;z-index:9998;animation:sparkleOut .9s ease-out forwards}
+  @keyframes sparkleOut{0%{transform:translate(0,0) scale(1);opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(0);opacity:0}}
 
-  /* Coin drop */
-  .coin-drop{
-    position:absolute;font-size:26px;pointer-events:none;z-index:10;
-    animation:coinFall 1s cubic-bezier(.5,0,.75,0) forwards;
-    filter:drop-shadow(0 2px 6px rgba(0,0,0,.3));
-  }
-  @keyframes coinFall{
-    0%  {top:-10px;opacity:0;transform:rotate(0) scale(.7)}
-    15% {opacity:1}
-    70% {top:55%;opacity:1;transform:rotate(360deg) scale(1)}
-    100%{top:70%;opacity:0;transform:rotate(720deg) scale(.4)}
-  }
-
-  /* Sparkle burst particles */
-  .sparkle-particle{
-    position:fixed;font-size:16px;pointer-events:none;z-index:9998;
-    animation:sparkleOut .9s ease-out forwards;
-  }
-  @keyframes sparkleOut{
-    0%  {transform:translate(0,0) scale(1);opacity:1}
-    100%{transform:translate(var(--dx),var(--dy)) scale(0);opacity:0}
-  }
-
-  /* Hero */
   .hero-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px}
   .hero-top h2{font-size:22px;font-weight:800;letter-spacing:-.5px}
   .muted{color:var(--muted);font-size:13px;margin-top:4px}
   .hero-actions{display:flex;gap:6px}
-  .hero-actions button{
-    background:var(--card-2);border:1px solid var(--border);color:var(--text);
-    padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;
-  }
+  .hero-actions button{background:var(--card-2);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600}
   .hero-actions button:hover{background:var(--border)}
 
-  /* ============ PROGRESS BAR + WALKER ============ */
   .progress-wrap{position:relative;padding:14px 0;margin-top:2px}
-  .progress-bar{
-    height:14px;background:var(--card-2);border-radius:999px;overflow:hidden;
-    border:1px solid var(--border);
-  }
-  .progress-fill{
-    height:100%;width:0%;border-radius:999px;
-    background:linear-gradient(90deg,#10b981,#34d399,#3b82f6);
-    transition:width .9s cubic-bezier(.4,0,.2,1);
-    box-shadow:0 0 20px rgba(16,185,129,.4);
-  }
-  .progress-walker{
-    position:absolute;top:50%;left:0;
-    font-size:22px;
-    transform:translate(-50%,-50%) scaleX(-1);
-    transition:left .9s cubic-bezier(.4,0,.2,1);
-    z-index:2;pointer-events:none;
-    filter:drop-shadow(0 3px 6px rgba(0,0,0,.35));
-    animation:walkerBob .6s ease-in-out infinite;
-  }
-  @keyframes walkerBob{
-    0%,100%{transform:translate(-50%,-50%) scaleX(-1) translateY(0)}
-    50%    {transform:translate(-50%,-50%) scaleX(-1) translateY(-3px)}
-  }
+  .progress-bar{height:14px;background:var(--card-2);border-radius:999px;overflow:hidden;border:1px solid var(--border)}
+  .progress-fill{height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg,#10b981,#34d399,#3b82f6);transition:width .9s cubic-bezier(.4,0,.2,1);box-shadow:0 0 20px rgba(16,185,129,.4)}
+  .progress-walker{position:absolute;top:50%;left:0;font-size:22px;transform:translate(-50%,-50%) scaleX(-1);
+    transition:left .9s cubic-bezier(.4,0,.2,1);z-index:2;pointer-events:none;
+    filter:drop-shadow(0 3px 6px rgba(0,0,0,.35));animation:walkerBob .6s ease-in-out infinite}
+  @keyframes walkerBob{0%,100%{transform:translate(-50%,-50%) scaleX(-1) translateY(0)}50%{transform:translate(-50%,-50%) scaleX(-1) translateY(-3px)}}
   .progress-labels{display:flex;justify-content:space-between;margin-top:8px;font-size:13px;font-weight:600}
   #progressPercent{color:var(--accent);font-size:16px;font-weight:800}
-  #progressPercent.complete{
-    background:linear-gradient(90deg,#10b981,#f59e0b,#ec4899);
-    -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-    animation:rainbowText 3s linear infinite;
-    background-size:200% auto;
-  }
+  #progressPercent.complete{background:linear-gradient(90deg,#10b981,#f59e0b,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:rainbowText 3s linear infinite;background-size:200% auto}
   @keyframes rainbowText{to{background-position:200% center}}
 
   .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:18px}
@@ -203,42 +129,22 @@
   .stat-label{display:block;font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
   .stat-value{display:block;font-size:16px;font-weight:800;margin-top:4px}
 
-  /* Chart */
   .card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
   .card-head h3{margin:0}
   .segmented{display:flex;background:var(--card-2);border-radius:8px;padding:3px}
-  .segmented button{
-    background:none;border:none;color:var(--muted);padding:6px 12px;
-    border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;
-  }
+  .segmented button{background:none;border:none;color:var(--muted);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600}
   .segmented button.active{background:var(--accent);color:#fff}
   .chart-box{height:260px;position:relative}
 
-  /* Form */
   .row{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap}
   .row > *{flex:1;min-width:140px}
-  input,select{
-    width:100%;background:var(--card-2);border:1px solid var(--border);
-    color:var(--text);padding:12px 14px;border-radius:10px;font-size:14px;
-    font-family:inherit;outline:none;transition:.2s;
-  }
+  input,select{width:100%;background:var(--card-2);border:1px solid var(--border);color:var(--text);padding:12px 14px;border-radius:10px;font-size:14px;font-family:inherit;outline:none;transition:.2s}
   input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(16,185,129,.15)}
-  .btn-primary{
-    width:100%;background:var(--accent);color:#fff;border:none;
-    padding:13px;border-radius:10px;font-size:15px;font-weight:700;
-    cursor:pointer;transition:.2s;margin-top:4px;
-  }
+  .btn-primary{width:100%;background:var(--accent);color:#fff;border:none;padding:13px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;transition:.2s;margin-top:4px}
   .btn-primary:hover{background:#059669;transform:translateY(-1px)}
-  .btn-ghost{
-    background:var(--card-2);border:1px solid var(--border);color:var(--text);
-    padding:13px 20px;border-radius:10px;font-weight:700;cursor:pointer;
-  }
+  .btn-ghost{background:var(--card-2);border:1px solid var(--border);color:var(--text);padding:13px 20px;border-radius:10px;font-weight:700;cursor:pointer}
 
-  /* Transaction list */
-  .tx-item{
-    display:flex;justify-content:space-between;align-items:center;
-    padding:12px 0;border-bottom:1px solid var(--border);
-  }
+  .tx-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)}
   .tx-item:last-child{border-bottom:none}
   .tx-info{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
   .tx-date{font-size:12px;color:var(--muted);font-weight:600}
@@ -250,56 +156,28 @@
   .tx-right .icon-btn{width:30px;height:30px;font-size:12px}
   .empty{color:var(--muted);text-align:center;padding:20px;font-size:14px}
 
-  /* Cute empty state */
-  .empty-hero{
-    text-align:center;padding:16px 0 8px;
-  }
-  .empty-hero .zzz{
-    font-size:36px;
-    animation:zzz 2s ease-in-out infinite;
-    display:inline-block;
-  }
-  @keyframes zzz{
-    0%,100%{transform:translateY(0) rotate(-8deg);opacity:.5}
-    50%    {transform:translateY(-10px) rotate(8deg);opacity:1}
-  }
-
-  /* Modal */
-  .modal{
-    position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);
-    display:none;align-items:center;justify-content:center;padding:20px;z-index:100;
-  }
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:20px;z-index:100}
   .modal.show{display:flex}
-  .modal-content{
-    background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
-    padding:24px;width:100%;max-width:400px;animation:pop .2s ease;
-  }
+  .modal-content{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;width:100%;max-width:400px;animation:pop .2s ease}
   @keyframes pop{from{transform:scale(.95);opacity:0}to{transform:scale(1);opacity:1}}
   .modal-content h3{margin-bottom:16px;font-size:18px}
   .modal-content label{display:block;font-size:12px;color:var(--muted);font-weight:600;margin-bottom:6px;margin-top:12px}
   .modal-actions{display:flex;gap:10px;margin-top:20px}
   .modal-actions button{flex:1;margin:0}
 
-  /* FAB */
-  .fab{
-    position:fixed;bottom:24px;right:24px;width:56px;height:56px;
-    border-radius:50%;background:var(--accent);color:#fff;border:none;
-    font-size:28px;font-weight:300;cursor:pointer;z-index:50;
-    box-shadow:0 8px 24px rgba(16,185,129,.4);transition:.2s;
-    display:grid;place-items:center;
-  }
+  .fab{position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:50%;background:var(--accent);color:#fff;border:none;font-size:28px;font-weight:300;cursor:pointer;z-index:50;box-shadow:0 8px 24px rgba(16,185,129,.4);transition:.2s;display:grid;place-items:center}
   .fab:hover{transform:scale(1.08) rotate(90deg)}
 
-  /* Confetti */
-  .confetti{position:fixed;top:-10px;z-index:9999;pointer-events:none;
-    animation:fall 2s linear forwards}
+  .confetti{position:fixed;top:-10px;z-index:9999;pointer-events:none;animation:fall 2s linear forwards}
   @keyframes fall{to{transform:translateY(100vh) rotate(720deg);opacity:0}}
 
-  /* Reduced motion */
+  /* Toast */
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;padding:12px 20px;border-radius:10px;font-weight:600;z-index:10000;box-shadow:0 8px 24px rgba(0,0,0,.3);animation:toastIn .3s ease;font-size:14px;max-width:90vw}
+  @keyframes toastIn{from{transform:translateX(-50%) translateY(20px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
+  @keyframes toastOut{to{transform:translateX(-50%) translateY(20px);opacity:0}}
+
   @media (prefers-reduced-motion: reduce){
-    .mascot,.bg-decoration,.coin-drop,.confetti,.progress-walker,.empty-hero .zzz{
-      animation:none !important;
-    }
+    .mascot,.bg-decoration,.coin-drop,.confetti,.progress-walker{animation:none !important}
     .progress-fill,.progress-walker,.mascot svg{transition:none !important}
   }
 </style>
@@ -312,12 +190,18 @@
   <header>
     <div class="brand">💰 Fund Tracker</div>
     <div class="header-actions">
+      <button class="icon-btn" id="saveFileBtn" title="Kết nối file CSV để auto-save">💾</button>
+      <button class="icon-btn" id="exportCsvBtn" title="Xuất CSV">📤</button>
+      <button class="icon-btn" id="importCsvBtn" title="Nhập CSV">📥</button>
       <button class="icon-btn" id="themeBtn" title="Đổi theme">☀️</button>
-      <button class="icon-btn" id="exportBtn" title="Xuất dữ liệu">⬇️</button>
-      <button class="icon-btn" id="importBtn" title="Nhập dữ liệu">⬆️</button>
-      <input type="file" id="importFile" hidden accept=".json">
+      <input type="file" id="importCsvFile" hidden accept=".csv,text/csv">
     </div>
   </header>
+
+  <div class="save-banner" id="saveBanner">
+    <span>⚠️ <span id="saveBannerText">LocalStorage là cache tạm</span></span>
+    <button onclick="document.getElementById('saveFileBtn').click()">Kết nối file</button>
+  </div>
 
   <div class="fund-tabs" id="fundTabs"></div>
 
@@ -334,43 +218,25 @@
         </div>
       </div>
 
-      <!-- ============ MASCOT ============ -->
       <div class="mascot-wrap" id="mascotWrap">
         <div class="mascot" id="mascot">
           <svg viewBox="0 0 200 180" xmlns="http://www.w3.org/2000/svg">
-            <!-- Crown (hidden until 100%) -->
             <g class="crown">
-              <path d="M 75 42 L 85 20 L 100 35 L 115 20 L 125 42 Z"
-                    fill="#fbbf24" stroke="#d97706" stroke-width="2" stroke-linejoin="round"/>
+              <path d="M 75 42 L 85 20 L 100 35 L 115 20 L 125 42 Z" fill="#fbbf24" stroke="#d97706" stroke-width="2" stroke-linejoin="round"/>
               <circle cx="85" cy="20" r="3" fill="#fde68a"/>
               <circle cx="100" cy="35" r="3" fill="#fde68a"/>
               <circle cx="115" cy="20" r="3" fill="#fde68a"/>
             </g>
-
-            <!-- Tail -->
-            <path d="M 168 105 Q 190 95 185 78 Q 180 62 195 60"
-                  stroke="#ff9fb0" stroke-width="6" fill="none" stroke-linecap="round"/>
-
-            <!-- Body -->
+            <path d="M 168 105 Q 190 95 185 78 Q 180 62 195 60" stroke="#ff9fb0" stroke-width="6" fill="none" stroke-linecap="round"/>
             <ellipse cx="100" cy="115" rx="75" ry="55" fill="#ffb8c8"/>
-
-            <!-- Ears -->
             <path d="M 55 70 Q 42 42 68 48 Q 76 54 72 78 Z" fill="#ff9fb0"/>
             <path d="M 145 70 Q 158 42 132 48 Q 124 54 128 78 Z" fill="#ff9fb0"/>
-
-            <!-- Legs -->
             <rect x="55" y="155" width="20" height="22" rx="7" fill="#ff9fb0"/>
             <rect x="125" y="155" width="20" height="22" rx="7" fill="#ff9fb0"/>
-
-            <!-- Coin slot -->
             <rect x="80" y="66" width="40" height="8" rx="4" fill="#c97a8a"/>
-
-            <!-- Snout -->
             <ellipse cx="100" cy="130" rx="22" ry="17" fill="#ff9fb0"/>
             <ellipse cx="93" cy="130" rx="3.5" ry="5" fill="#d97a8a"/>
             <ellipse cx="107" cy="130" rx="3.5" ry="5" fill="#d97a8a"/>
-
-            <!-- Eyes -->
             <g class="eye eye-left">
               <circle cx="78" cy="108" r="7" fill="#3a2a2a"/>
               <circle cx="80" cy="106" r="2.5" fill="#fff"/>
@@ -379,12 +245,8 @@
               <circle cx="122" cy="108" r="7" fill="#3a2a2a"/>
               <circle cx="124" cy="106" r="2.5" fill="#fff"/>
             </g>
-
-            <!-- Cheeks -->
             <ellipse cx="64" cy="122" rx="10" ry="6" fill="#ff7a95" opacity=".45"/>
             <ellipse cx="136" cy="122" rx="10" ry="6" fill="#ff7a95" opacity=".45"/>
-
-            <!-- Sparkles (visible at 100%) -->
             <g class="sparkles">
               <text x="18" y="55" font-size="22">✨</text>
               <text x="162" y="42" font-size="18">⭐</text>
@@ -394,19 +256,14 @@
         </div>
       </div>
 
-      <!-- ============ PROGRESS WITH WALKER ============ -->
       <div class="progress-wrap">
-        <div class="progress-bar">
-          <div class="progress-fill" id="progressFill"></div>
-        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
         <div class="progress-walker" id="walker">🐷</div>
       </div>
-
       <div class="progress-labels">
         <span id="progressPercent">0%</span>
         <span id="progressAmounts">0 đ / 0 đ</span>
       </div>
-
       <div class="stats-grid">
         <div class="stat"><span class="stat-label">Đã tích</span><span class="stat-value" id="statSaved">—</span></div>
         <div class="stat"><span class="stat-label">Còn lại</span><span class="stat-value" id="statRemaining">—</span></div>
@@ -474,9 +331,12 @@
 <script>
 /* ============ STATE ============ */
 const LS_KEY = 'fund-tracker-v1';
+const IDB_HANDLE_KEY = 'csv-file-handle';
 let state = { funds: [], transactions: [], activeFundId: null, theme: 'dark', chartMode: 'cumulative' };
 let chartInstance = null;
 let editingFundId = null;
+let fileHandle = null;
+let autoSaveTimer = null;
 
 /* ============ HELPERS ============ */
 const fmt = n => new Intl.NumberFormat('vi-VN').format(Math.round(n || 0));
@@ -485,19 +345,287 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 const todayStr = () => new Date().toISOString().slice(0, 10);
 const escapeHtml = s => String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
+function toast(msg, ms = 2500) {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => { el.style.animation = 'toastOut .3s ease forwards'; }, ms);
+  setTimeout(() => el.remove(), ms + 400);
+}
+
+/* ============ STORAGE ============ */
 function load() {
   try {
     const raw = localStorage.getItem(LS_KEY);
     if (raw) state = { ...state, ...JSON.parse(raw) };
   } catch (e) {}
 }
-function save() { localStorage.setItem(LS_KEY, JSON.stringify(state)); }
 
-function attachMoneyFormat(input) {
-  input.addEventListener('input', () => {
-    const digits = input.value.replace(/\D/g, '');
-    input.value = digits ? fmt(Number(digits)) : '';
+function save() {
+  localStorage.setItem(LS_KEY, JSON.stringify(state));
+  scheduleAutoSave();
+}
+
+/* ============ INDEXEDDB (lưu file handle) ============ */
+function openIDB() {
+  return new Promise((res, rej) => {
+    const req = indexedDB.open('fund-tracker-db', 1);
+    req.onupgradeneeded = () => req.result.createObjectStore('handles');
+    req.onsuccess = () => res(req.result);
+    req.onerror = () => rej(req.error);
   });
+}
+async function idbSet(key, value) {
+  const db = await openIDB();
+  return new Promise((res, rej) => {
+    const tx = db.transaction('handles', 'readwrite');
+    const req = tx.objectStore('handles').put(value, key);
+    req.onsuccess = () => res();
+    req.onerror = () => rej(req.error);
+  });
+}
+async function idbGet(key) {
+  try {
+    const db = await openIDB();
+    return new Promise(res => {
+      const tx = db.transaction('handles', 'readonly');
+      const req = tx.objectStore('handles').get(key);
+      req.onsuccess = () => res(req.result || null);
+      req.onerror = () => res(null);
+    });
+  } catch { return null; }
+}
+
+/* ============ CSV ============ */
+const CSV_BOM = '\uFEFF';
+const CSV_HEADER = ['type','id','fundId','name','target','deadline','amount','date','note'];
+
+function escCSV(v) {
+  const s = String(v ?? '');
+  return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+function toCSV() {
+  const rows = [CSV_HEADER];
+  state.funds.forEach(f => {
+    rows.push(['fund', f.id, '', f.name, f.target, f.deadline || '', '', '', '']);
+  });
+  state.transactions.forEach(t => {
+    rows.push(['transaction', t.id, t.fundId, '', '', '', t.amount, t.date, t.note || '']);
+  });
+  return CSV_BOM + rows.map(r => r.map(escCSV).join(',')).join('\r\n');
+}
+
+function parseCSV(text) {
+  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+  const rows = [];
+  let cur = '', inQuote = false, row = [];
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuote) {
+      if (c === '"') {
+        if (text[i+1] === '"') { cur += '"'; i++; }
+        else inQuote = false;
+      } else cur += c;
+    } else {
+      if (c === '"') inQuote = true;
+      else if (c === ',') { row.push(cur); cur = ''; }
+      else if (c === '\n') { row.push(cur); rows.push(row); row = []; cur = ''; }
+      else if (c === '\r') {}
+      else cur += c;
+    }
+  }
+  if (cur || row.length) { row.push(cur); rows.push(row); }
+  return rows;
+}
+
+function importCSV(text) {
+  const rows = parseCSV(text);
+  if (!rows.length) throw new Error('File rỗng');
+  const header = rows[0].map(h => h.trim().toLowerCase());
+  const idx = k => header.indexOf(k);
+  if (idx('type') === -1) throw new Error('File CSV thiếu cột "type"');
+
+  const funds = [], transactions = [];
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r.length || !r[0]) continue;
+    const type = r[idx('type')];
+    if (type === 'fund') {
+      funds.push({
+        id: r[idx('id')] || uid(),
+        name: r[idx('name')] || 'Fund',
+        target: Number(r[idx('target')]) || 0,
+        deadline: r[idx('deadline')] || null,
+        createdAt: new Date().toISOString()
+      });
+    } else if (type === 'transaction') {
+      transactions.push({
+        id: r[idx('id')] || uid(),
+        fundId: r[idx('fundId')],
+        amount: Number(r[idx('amount')]) || 0,
+        date: r[idx('date')] || todayStr(),
+        note: r[idx('note')] || ''
+      });
+    }
+  }
+  return { funds, transactions };
+}
+
+/* ============ FILE SYSTEM ACCESS API (auto-save) ============ */
+const hasFSA = 'showSaveFilePicker' in window;
+
+async function pickFileHandle() {
+  if (!hasFSA) {
+    toast('Trình duyệt không hỗ trợ auto-save. Dùng Chrome/Edge, hoặc nút 📤');
+    return;
+  }
+  try {
+    fileHandle = await window.showSaveFilePicker({
+      suggestedName: `fund-tracker-${todayStr()}.csv`,
+      types: [{ description: 'CSV (Excel)', accept: { 'text/csv': ['.csv'] } }]
+    });
+    await idbSet(IDB_HANDLE_KEY, fileHandle);
+
+    // Nếu file đã có dữ liệu → hỏi ghi đè hay đọc từ file
+    let existingText = '';
+    try {
+      const file = await fileHandle.getFile();
+      existingText = await file.text();
+    } catch {}
+
+    if (existingText.trim() && existingText.replace(CSV_BOM, '').split('\n').length > 1) {
+      const overwrite = confirm('File đã có dữ liệu.\n\nOK = Ghi đè bằng dữ liệu hiện tại\nCancel = Đọc dữ liệu từ file vào app');
+      if (!overwrite) {
+        const imported = importCSV(existingText);
+        state.funds = imported.funds;
+        state.transactions = imported.transactions;
+        state.activeFundId = imported.funds[0]?.id || null;
+        localStorage.setItem(LS_KEY, JSON.stringify(state));
+        renderAll();
+        toast('📥 Đã đọc dữ liệu từ file');
+      } else {
+        await writeToFile();
+        toast('💾 Đã ghi đè file, auto-save đang bật');
+      }
+    } else {
+      await writeToFile();
+      toast('💾 Đã kết nối! Tự động lưu vào file');
+    }
+    updateSaveUI();
+  } catch (e) {
+    if (e.name !== 'AbortError') console.error(e);
+  }
+}
+
+async function writeToFile() {
+  if (!fileHandle) return false;
+  try {
+    const perm = await fileHandle.queryPermission({ mode: 'readwrite' });
+    if (perm !== 'granted') return false;
+    const w = await fileHandle.createWritable();
+    await w.write(toCSV());
+    await w.close();
+    return true;
+  } catch (e) {
+    console.error('Auto-save failed:', e);
+    return false;
+  }
+}
+
+function scheduleAutoSave() {
+  if (!fileHandle) return;
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(writeToFile, 800);
+}
+
+async function handleSaveBtnClick(e) {
+  // Shift+click khi đã link → ngắt kết nối
+  if (e.shiftKey && fileHandle) {
+    if (confirm('Ngắt kết nối file CSV? Dữ liệu vẫn còn trong app nhưng sẽ không tự lưu nữa.')) {
+      fileHandle = null;
+      await idbSet(IDB_HANDLE_KEY, null);
+      updateSaveUI();
+      toast('Đã ngắt auto-save');
+    }
+    return;
+  }
+  if (!fileHandle) { await pickFileHandle(); return; }
+
+  // Đã link → xin quyền + ghi ngay
+  try {
+    const perm = await fileHandle.queryPermission({ mode: 'readwrite' });
+    if (perm !== 'granted') {
+      const granted = await fileHandle.requestPermission({ mode: 'readwrite' });
+      if (granted !== 'granted') { toast('❌ Không có quyền ghi file'); return; }
+    }
+    if (await writeToFile()) toast('💾 Đã lưu vào file');
+    else toast('❌ Lưu thất bại');
+  } catch (err) { console.error(err); }
+}
+
+async function restoreFileHandle() {
+  const h = await idbGet(IDB_HANDLE_KEY);
+  if (h) {
+    fileHandle = h;
+    updateSaveUI();
+    // Thử ghi luôn nếu còn quyền (không cần user gesture)
+    await writeToFile();
+  }
+}
+
+function updateSaveUI() {
+  const btn = document.getElementById('saveFileBtn');
+  const banner = document.getElementById('saveBanner');
+  const bannerText = document.getElementById('saveBannerText');
+  if (!hasFSA) {
+    btn.title = 'Trình duyệt không hỗ trợ auto-save (dùng Chrome/Edge)';
+    btn.style.opacity = '.4';
+    banner.classList.add('show');
+    bannerText.textContent = 'Trình duyệt không hỗ trợ auto-save — hãy export CSV thủ công (📤)';
+  } else if (!fileHandle) {
+    btn.title = 'Kết nối file CSV để auto-save';
+    btn.classList.remove('active');
+    banner.classList.add('show');
+    bannerText.textContent = 'Dữ liệu chỉ lưu trong browser — kết nối file CSV để an toàn';
+  } else {
+    btn.title = 'Auto-save đang bật (click để lưu ngay, Shift+click để ngắt)';
+    btn.classList.add('active');
+    banner.classList.remove('show');
+  }
+}
+
+/* ============ CSV export / import thủ công ============ */
+function exportCSV() {
+  const blob = new Blob([toCSV()], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `fund-tracker-${todayStr()}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('📤 Đã tải xuống CSV');
+}
+
+function handleImportFile(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const imported = importCSV(reader.result);
+      if (!confirm(`Import ${imported.funds.length} fund và ${imported.transactions.length} giao dịch?\n\nDữ liệu hiện tại sẽ bị GHI ĐÈ.`)) return;
+      state.funds = imported.funds;
+      state.transactions = imported.transactions;
+      state.activeFundId = imported.funds[0]?.id || null;
+      save(); renderAll();
+      piggyHappy();
+      toast('📥 Import CSV thành công!');
+    } catch (err) {
+      alert('Lỗi: ' + err.message);
+    }
+    e.target.value = '';
+  };
+  reader.readAsText(file, 'utf-8');
 }
 
 /* ============ BACKGROUND DECORATIONS ============ */
@@ -526,20 +654,17 @@ function dropCoin() {
   wrap.appendChild(coin);
   setTimeout(() => coin.remove(), 1100);
 }
-
 function piggyHappy() {
   const m = document.getElementById('mascot');
   m.classList.remove('happy');
   void m.offsetWidth;
   m.classList.add('happy');
 }
-
 function sparkleBurst() {
   const wrap = document.getElementById('mascotWrap');
   const rect = wrap.getBoundingClientRect();
   const cx = rect.left + rect.width / 2;
   const cy = rect.top + rect.height / 2;
-
   for (let i = 0; i < 10; i++) {
     const el = document.createElement('div');
     el.className = 'sparkle-particle';
@@ -554,7 +679,6 @@ function sparkleBurst() {
     setTimeout(() => el.remove(), 950);
   }
 }
-
 function updatePiggyScale(percent) {
   const mascot = document.getElementById('mascot');
   const scale = 0.85 + (Math.min(100, percent) / 100) * 0.3;
@@ -568,19 +692,14 @@ function getActiveFund() {
   if (!f && state.funds.length) { f = state.funds[0]; state.activeFundId = f.id; }
   return f || null;
 }
-
 function fundTxs(fundId) {
-  return state.transactions
-    .filter(t => t.fundId === fundId)
-    .sort((a, b) => a.date.localeCompare(b.date));
+  return state.transactions.filter(t => t.fundId === fundId).sort((a, b) => a.date.localeCompare(b.date));
 }
-
 function fundStats(fund) {
   const txs = fundTxs(fund.id);
   const saved = txs.reduce((s, t) => s + t.amount, 0);
   const percent = fund.target > 0 ? (saved / fund.target) * 100 : 0;
   const remaining = Math.max(0, fund.target - saved);
-
   let avgPerMonth = 0;
   const positives = txs.filter(t => t.amount > 0);
   if (positives.length) {
@@ -589,7 +708,6 @@ function fundStats(fund) {
     const months = Math.max(1, (now.getFullYear() - first.getFullYear()) * 12 + (now.getMonth() - first.getMonth()) + 1);
     avgPerMonth = positives.reduce((s, t) => s + t.amount, 0) / months;
   }
-
   let eta = 'Chưa đủ dữ liệu';
   if (remaining === 0 && fund.target > 0) eta = 'Đã xong 🎉';
   else if (avgPerMonth > 0) {
@@ -597,7 +715,6 @@ function fundStats(fund) {
     const d = new Date(); d.setDate(d.getDate() + days);
     eta = d.toLocaleDateString('vi-VN');
   }
-
   return { saved, percent, remaining, avgPerMonth, eta, txs };
 }
 
@@ -658,7 +775,6 @@ function renderHero(fund, stats) {
   pct.textContent = stats.percent.toFixed(1) + '%';
   pct.classList.toggle('complete', stats.percent >= 100);
   amts.textContent = `${fmtMoney(stats.saved)} / ${fmtMoney(fund.target)}`;
-
   walker.style.left = clamped + '%';
   walker.textContent = stats.percent >= 100 ? '👑' : stats.percent >= 50 ? '🐖' : stats.percent > 0 ? '🐷' : '😴';
 
@@ -666,20 +782,17 @@ function renderHero(fund, stats) {
   document.getElementById('statRemaining').textContent = fmtMoney(stats.remaining);
   document.getElementById('statAvg').textContent = fmtMoney(stats.avgPerMonth);
   document.getElementById('statEta').textContent = stats.eta;
-
   updatePiggyScale(stats.percent);
 }
 
 function renderChart(fund, txs) {
   const ctx = document.getElementById('chart');
   if (chartInstance) chartInstance.destroy();
-
   const isDark = document.documentElement.dataset.theme === 'dark';
   const gridColor = isDark ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.07)';
   const textColor = isDark ? '#94a3b8' : '#64748b';
 
   let labels = [], data = [];
-
   if (state.chartMode === 'cumulative') {
     let cum = 0;
     labels = txs.map(t => new Date(t.date).toLocaleDateString('vi-VN'));
@@ -707,17 +820,12 @@ function renderChart(fund, txs) {
         data,
         borderColor: '#10b981',
         backgroundColor: isLine ? 'rgba(16,185,129,.15)' : 'rgba(16,185,129,.65)',
-        fill: isLine,
-        tension: .35,
-        pointRadius: 4,
-        pointBackgroundColor: '#10b981',
-        borderRadius: 6,
-        borderWidth: 2
+        fill: isLine, tension: .35, pointRadius: 4,
+        pointBackgroundColor: '#10b981', borderRadius: 6, borderWidth: 2
       }]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
+      responsive: true, maintainAspectRatio: false,
       plugins: {
         legend: { display: false },
         tooltip: { callbacks: { label: c => fmtMoney(c.parsed.y) } }
@@ -749,7 +857,6 @@ function renderTxList(fund, txs) {
         <button class="icon-btn" data-del="${t.id}" title="Xóa">✕</button>
       </div>
     </div>`).join('');
-
   el.querySelectorAll('[data-del]').forEach(btn => {
     btn.onclick = () => {
       if (confirm('Xóa giao dịch này?')) {
@@ -763,14 +870,10 @@ function renderTxList(fund, txs) {
 function renderAll() {
   const fund = getActiveFund();
   renderTabs();
-
   document.querySelectorAll('#chartToggle button').forEach(b =>
     b.classList.toggle('active', b.dataset.mode === state.chartMode));
-
   if (!fund) {
-    renderHero(null, null);
-    renderChart(null, []);
-    renderTxList(null, []);
+    renderHero(null, null); renderChart(null, []); renderTxList(null, []);
     return;
   }
   const stats = fundStats(fund);
@@ -781,12 +884,10 @@ function renderAll() {
 
 /* ============ ACTIONS ============ */
 function checkMilestone(before, after) {
-  const marks = [25, 50, 75, 100];
-  for (const m of marks) {
+  for (const m of [25, 50, 75, 100]) {
     if (before < m && after >= m) { fireConfetti(); sparkleBurst(); break; }
   }
 }
-
 function fireConfetti() {
   const colors = ['#10b981','#3b82f6','#f59e0b','#ef4444','#8b5cf6','#ec4899'];
   const emojis = ['💰','🎉','⭐','💖','🪙','✨','🌟'];
@@ -796,7 +897,6 @@ function fireConfetti() {
     el.style.left = Math.random() * 100 + 'vw';
     el.style.animationDelay = (Math.random() * 0.4) + 's';
     el.style.animationDuration = (1.6 + Math.random() * 1.2) + 's';
-
     if (Math.random() > 0.5) {
       el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
       el.style.fontSize = (16 + Math.random() * 10) + 'px';
@@ -811,34 +911,30 @@ function fireConfetti() {
   }
 }
 
+function attachMoneyFormat(input) {
+  input.addEventListener('input', () => {
+    const digits = input.value.replace(/\D/g, '');
+    input.value = digits ? fmt(Number(digits)) : '';
+  });
+}
+
 /* ============ FORM: TRANSACTION ============ */
 document.getElementById('txForm').onsubmit = e => {
   e.preventDefault();
   const fund = getActiveFund();
   if (!fund) { alert('Hãy tạo fund trước nhé! 🐷'); return; }
-
   const amountRaw = document.getElementById('txAmount').value.replace(/\D/g, '');
-  const typeMultiplier = Number(document.getElementById('txType').value);
-  const amount = Number(amountRaw) * typeMultiplier;
+  const amount = Number(amountRaw) * Number(document.getElementById('txType').value);
   const date = document.getElementById('txDate').value || todayStr();
   const note = document.getElementById('txNote').value.trim();
   if (!amount) return;
-
   const before = fundStats(fund).percent;
   state.transactions.push({ id: uid(), fundId: fund.id, amount, date, note });
   save();
   const after = fundStats(fund).percent;
-
-  // 🎬 Cute animations
-  if (amount > 0) {
-    dropCoin();
-    piggyHappy();
-    setTimeout(sparkleBurst, 200);
-  } else {
-    piggyHappy();
-  }
+  if (amount > 0) { dropCoin(); piggyHappy(); setTimeout(sparkleBurst, 200); }
+  else piggyHappy();
   checkMilestone(before, after);
-
   e.target.reset();
   document.getElementById('txDate').value = todayStr();
   renderAll();
@@ -857,15 +953,10 @@ function closeFundModal() {
   document.getElementById('fundModal').classList.remove('show');
   editingFundId = null;
 }
-
 document.getElementById('newFundBtn').onclick = () => openFundModal();
 document.getElementById('cancelFundBtn').onclick = closeFundModal;
-document.getElementById('fundModal').onclick = e => {
-  if (e.target.id === 'fundModal') closeFundModal();
-};
-document.getElementById('editFundBtn').onclick = () => {
-  const f = getActiveFund(); if (f) openFundModal(f);
-};
+document.getElementById('fundModal').onclick = e => { if (e.target.id === 'fundModal') closeFundModal(); };
+document.getElementById('editFundBtn').onclick = () => { const f = getActiveFund(); if (f) openFundModal(f); };
 document.getElementById('deleteFundBtn').onclick = () => {
   const f = getActiveFund(); if (!f) return;
   if (!confirm(`Xóa fund "${f.name}" và toàn bộ giao dịch?`)) return;
@@ -874,14 +965,12 @@ document.getElementById('deleteFundBtn').onclick = () => {
   state.activeFundId = state.funds[0]?.id || null;
   save(); renderAll();
 };
-
 document.getElementById('fundForm').onsubmit = e => {
   e.preventDefault();
   const name = document.getElementById('fundNameInput').value.trim();
   const target = Number(document.getElementById('fundTargetInput').value.replace(/\D/g, ''));
   const deadline = document.getElementById('fundDeadlineInput').value || null;
   if (!name || !target) return;
-
   if (editingFundId) {
     const f = state.funds.find(f => f.id === editingFundId);
     Object.assign(f, { name, target, deadline });
@@ -890,19 +979,16 @@ document.getElementById('fundForm').onsubmit = e => {
     state.funds.push(fund);
     state.activeFundId = fund.id;
   }
-  save(); closeFundModal();
-  piggyHappy(); // celebrate new fund creation
-  renderAll();
+  save(); closeFundModal(); piggyHappy(); renderAll();
 };
 
-/* ============ CHART TOGGLE ============ */
+/* ============ WIRE UP ============ */
 document.getElementById('chartToggle').onclick = e => {
   const btn = e.target.closest('button'); if (!btn) return;
   state.chartMode = btn.dataset.mode;
   save(); renderAll();
 };
 
-/* ============ THEME ============ */
 function applyTheme() {
   document.documentElement.dataset.theme = state.theme;
   document.getElementById('themeBtn').textContent = state.theme === 'dark' ? '☀️' : '🌙';
@@ -912,32 +998,10 @@ document.getElementById('themeBtn').onclick = () => {
   save(); applyTheme(); renderAll();
 };
 
-/* ============ EXPORT / IMPORT ============ */
-document.getElementById('exportBtn').onclick = () => {
-  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `fund-tracker-${todayStr()}.json`;
-  a.click();
-  URL.revokeObjectURL(a.href);
-};
-document.getElementById('importBtn').onclick = () => document.getElementById('importFile').click();
-document.getElementById('importFile').onchange = e => {
-  const file = e.target.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    try {
-      const data = JSON.parse(reader.result);
-      if (!Array.isArray(data.funds) || !Array.isArray(data.transactions)) throw 0;
-      state = { ...state, ...data };
-      save(); applyTheme(); renderAll();
-      piggyHappy();
-      alert('Nhập dữ liệu thành công! 🎉');
-    } catch { alert('File không hợp lệ'); }
-    e.target.value = '';
-  };
-  reader.readAsText(file);
-};
+document.getElementById('saveFileBtn').onclick = handleSaveBtnClick;
+document.getElementById('exportCsvBtn').onclick = exportCSV;
+document.getElementById('importCsvBtn').onclick = () => document.getElementById('importCsvFile').click();
+document.getElementById('importCsvFile').onchange = handleImportFile;
 
 /* ============ INIT ============ */
 load();
@@ -947,12 +1011,8 @@ attachMoneyFormat(document.getElementById('txAmount'));
 attachMoneyFormat(document.getElementById('fundTargetInput'));
 document.getElementById('txDate').value = todayStr();
 renderAll();
-
-// 🐷 Easter egg: click the piggy to make it jump
-document.getElementById('mascot').addEventListener('click', () => {
-  piggyHappy();
-  sparkleBurst();
-});
+restoreFileHandle();
+document.getElementById('mascot').addEventListener('click', () => { piggyHappy(); sparkleBurst(); });
 </script>
 </body>
 </html>
