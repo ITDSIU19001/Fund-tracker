@@ -250,40 +250,68 @@ function toast(msg, ms = 2500) {
 }
 
 /* ============ GOOGLE SHEETS DATA LAYER ============ */
+// Sử dụng JSONP để đọc dữ liệu (Lách lỗi CORS)
 async function loadDataFromSheet() {
   if (isLoading) return;
   isLoading = true;
   try {
-    const response = await fetch(`${GOOGLE_SHEET_API_URL}?t=${Date.now()}`);
-    if (!response.ok) throw new Error("Lỗi mạng");
-    const data = await response.json();
-    
+    const data = await new Promise((resolve, reject) => {
+      const callbackName = 'jsonp_' + Date.now();
+      window[callbackName] = (res) => {
+        delete window[callbackName];
+        if (document.body.contains(script)) document.body.removeChild(script);
+        resolve(res);
+      };
+      const script = document.createElement('script');
+      script.src = `${GOOGLE_SHEET_API_URL}?callback=${callbackName}&t=${Date.now()}`;
+      script.onerror = () => {
+        delete window[callbackName];
+        if (document.body.contains(script)) document.body.removeChild(script);
+        reject(new Error("Lỗi mạng"));
+      };
+      document.body.appendChild(script);
+    });
+
     state.funds = data.funds || [];
     state.transactions = data.transactions || [];
     state.activeFundId = state.funds[0]?.id || null;
   } catch (e) {
     console.error('Lỗi tải dữ liệu:', e);
-    // toast('❌ Không thể tải dữ liệu. Kiểm tra lại Link Apps Script.'); // Bỏ comment nếu cần
   } finally {
     isLoading = false;
   }
 }
 
-async function sendActionToSheet(action, payload) {
-  try {
-    // Dùng mode: 'no-cors' để lách lỗi CORS của Google
-    await fetch(GOOGLE_SHEET_API_URL, {
-      method: 'POST',
-      mode: 'no-cors', 
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action, payload })
-    });
-    // Vì mode no-cors không trả về nội dung, ta chỉ cần đợi 1 nhịp để server kịp ghi
-    return true; 
-  } catch (e) {
-    console.error("Lỗi gửi dữ liệu:", e);
-    throw new Error("Lỗi kết nối");
-  }
+// Sử dụng Form ẩn gửi đi để ghi dữ liệu (Lách lỗi CORS)
+function sendActionToSheet(action, payload) {
+  return new Promise((resolve) => {
+    const iframeName = 'iframe_' + Date.now();
+    const iframe = document.createElement('iframe');
+    iframe.name = iframeName;
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = GOOGLE_SHEET_API_URL;
+    form.target = iframeName;
+    form.style.display = 'none';
+
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'data';
+    input.value = JSON.stringify({ action, payload });
+
+    form.appendChild(input);
+    document.body.appendChild(form);
+    form.submit();
+
+    setTimeout(() => {
+      document.body.removeChild(form);
+      document.body.removeChild(iframe);
+      resolve();
+    }, 1500); // Đợi 1.5s để Google xử lý
+  });
 }
 
 /* ============ BACKGROUND & ANIMATIONS ============ */
@@ -468,8 +496,6 @@ document.getElementById('txForm').onsubmit = async e => {
   const before = fundStats(fund).percent;
   try {
     await sendActionToSheet('addTx', { id: uid(), fundId: fund.id, amount, date, note });
-    // Đợi 0.5s để Google Sheets kịp xử lý
-    await new Promise(r => setTimeout(r, 500));
     await loadDataFromSheet();
     
     const after = fundStats(fund).percent;
@@ -518,7 +544,6 @@ document.getElementById('fundForm').onsubmit = async e => {
       await sendActionToSheet('addFund', newFund); 
       state.activeFundId = newFund.id; 
     }
-    await new Promise(r => setTimeout(r, 500));
     await loadDataFromSheet(); closeFundModal(); piggyHappy(); renderAll(); toast('✅ Đã lưu fund');
   } catch (err) { toast('❌ Lỗi kết nối'); } 
   finally { btn.disabled = false; btn.textContent = "Lưu"; }
