@@ -131,7 +131,33 @@
   .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;padding:12px 20px;border-radius:10px;font-weight:600;z-index:10000;box-shadow:0 8px 24px rgba(0,0,0,.3);animation:toastIn .3s ease;font-size:14px;max-width:90vw}
   @keyframes toastIn{from{transform:translateX(-50%) translateY(20px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
   @keyframes toastOut{to{transform:translateX(-50%) translateY(20px);opacity:0}}
-  @media (prefers-reduced-motion: reduce){.mascot,.bg-decoration,.coin-drop,.confetti,.progress-walker{animation:none !important}.progress-fill,.progress-walker,.mascot svg{transition:none !important}}
+
+  /* Food falling animation */
+  .mascot-wrap{position:relative;overflow:visible}
+  .feeding-food{
+    position:absolute;z-index:20;top:-65px;left:50%;
+    font-size:34px;line-height:1;pointer-events:none;
+    transform:translateX(-50%);
+    animation:food-fall 900ms cubic-bezier(.35,.1,.65,1) forwards;
+  }
+  /* Pig jumps up to catch the food */
+  #mascot.feeding{transform-origin:center bottom;animation:pig-jump 700ms ease-in-out}
+  @keyframes food-fall{
+    0%{transform:translate(-50%,-20px) rotate(-15deg) scale(.7);opacity:0}
+    15%{opacity:1}
+    65%{transform:translate(-50%,85px) rotate(15deg) scale(1.15);opacity:1}
+    78%{transform:translate(-50%,95px) scale(.2);opacity:0}
+    100%{transform:translate(-50%,95px) scale(0);opacity:0}
+  }
+  @keyframes pig-jump{
+    0%,100%{transform:translateY(0) scale(1)}
+    25%{transform:translateY(-12px) scale(1.04,.96)}
+    48%{transform:translateY(-65px) scale(.96,1.08)}
+    65%{transform:translateY(-55px) scale(1.04,.96)}
+    82%{transform:translateY(3px) scale(1.08,.92)}
+  }
+
+  @media (prefers-reduced-motion: reduce){.mascot,.bg-decoration,.coin-drop,.confetti,.progress-walker,.feeding-food{animation:none !important}.progress-fill,.progress-walker,.mascot svg{transition:none !important}}
 </style>
 </head>
 <body>
@@ -201,11 +227,7 @@
       </div>
     </section>
 
-    <section class="card">
-      <div class="card-head"><h3>Biểu đồ tích lũy</h3><div class="segmented" id="chartToggle"><button data-mode="cumulative" class="active">Tích lũy</button><button data-mode="monthly">Theo tháng</button></div></div>
-      <div class="chart-box"><canvas id="chart"></canvas></div>
-    </section>
-
+    <!-- Form thêm giao dịch (đã chuyển lên trên biểu đồ) -->
     <section class="card">
       <h3>Thêm giao dịch</h3>
       <form id="txForm">
@@ -213,6 +235,11 @@
         <div class="row"><select id="txType"><option value="1">Góp tiền (+)</option><option value="-1">Rút tiền (−)</option></select><input type="text" id="txNote" placeholder="Ghi chú (tuỳ chọn)"></div>
         <button type="submit" class="btn-primary" id="submitTxBtn">Thêm giao dịch</button>
       </form>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h3>Biểu đồ tích lũy</h3><div class="segmented" id="chartToggle"><button data-mode="cumulative" class="active">Tích lũy</button><button data-mode="monthly">Theo tháng</button></div></div>
+      <div class="chart-box"><canvas id="chart"></canvas></div>
     </section>
 
     <section class="card"><h3>Lịch sử giao dịch</h3><div id="txList"></div></section>
@@ -351,6 +378,63 @@ function piggyHappy() {
   const m = document.getElementById('mascot');
   m.classList.remove('happy'); void m.offsetWidth; m.classList.add('happy');
 }
+
+// Food tiers based on the percentage of progress gained per feeding
+const FOOD_TIERS = [
+  { max: 1, icon: '🥬' },
+  { max: 2, icon: '🥕' },
+  { max: 3, icon: '🌽' },
+  { max: 4, icon: '🍎' },
+  { max: 5, icon: '🍌' },
+  { max: 6, icon: '🍓' },
+  { max: 7, icon: '🍞' },
+  { max: 8, icon: '🥐' },
+  { max: 9, icon: '🍪' },
+  { max: 10, icon: '🧁' },
+  { max: 12, icon: '🍩' },
+  { max: 14, icon: '🍫' },
+  { max: 16, icon: '🍦' },
+  { max: 18, icon: '🍰' },
+  { max: 20, icon: '🍕' },
+  { max: 25, icon: '🍟' },
+  { max: 30, icon: '🌭' },
+  { max: 40, icon: '🍔' },
+  { max: 50, icon: '🍗' },
+  { max: Infinity, icon: '🎂' }
+];
+
+function getFoodIcon(progressGain) {
+  const tier = FOOD_TIERS.find(item => progressGain <= item.max);
+  return tier.icon;
+}
+
+// Piggy jumps up to catch the food
+function feedPiggy(progressGain) {
+  const wrap = document.querySelector('.mascot-wrap');
+  const mascot = document.getElementById('mascot');
+  if (!wrap || !mascot) return;
+
+  const food = document.createElement('span');
+  food.className = 'feeding-food';
+  food.textContent = getFoodIcon(progressGain);
+  wrap.appendChild(food);
+
+  // Reset the animation so it can be triggered repeatedly
+  mascot.classList.remove('feeding');
+  void mascot.offsetWidth;
+  mascot.classList.add('feeding');
+
+  food.addEventListener('animationend', () => food.remove(), { once: true });
+
+  // Only react to the mascot's own animation (child animations bubble up)
+  const onEnd = e => {
+    if (e.target !== mascot) return;
+    mascot.classList.remove('feeding', 'happy');
+    mascot.removeEventListener('animationend', onEnd);
+  };
+  mascot.addEventListener('animationend', onEnd);
+}
+
 function sparkleBurst() {
   const wrap = document.getElementById('mascotWrap'); const rect = wrap.getBoundingClientRect();
   const cx = rect.left + rect.width / 2; const cy = rect.top + rect.height / 2;
@@ -506,7 +590,15 @@ document.getElementById('txForm').onsubmit = async e => {
     await sendActionToSheet('addTx', { id: uid(), fundId: fund.id, amount, date, note });
     await loadDataFromSheet();
     const after = fundStats(fund).percent;
-    if (amount > 0) { dropCoin(); piggyHappy(); setTimeout(sparkleBurst, 200); } else piggyHappy();
+    if (amount > 0) {
+      dropCoin();
+      // % of progress gained from this transaction (not total progress)
+      const progressGain = fund.target > 0 ? (amount / fund.target) * 100 : 0;
+      // The piggy jumps up to catch the corresponding food item
+      feedPiggy(progressGain);
+      piggyHappy();
+      setTimeout(sparkleBurst, 200);
+    } else piggyHappy();
     checkMilestone(before, after);
     e.target.reset(); document.getElementById('txDate').value = todayStr(); renderAll(); toast('✅ Đã thêm giao dịch');
   } catch (err) { toast('❌ Lỗi kết nối'); } 
