@@ -95,6 +95,7 @@
   input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(16,185,129,.15)}
   .btn-primary{width:100%;background:var(--accent);color:#fff;border:none;padding:13px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;transition:.2s;margin-top:4px}
   .btn-primary:hover{background:#059669;transform:translateY(-1px)}
+  .btn-primary:disabled{opacity:0.6;cursor:not-allowed;transform:none}
   .btn-ghost{background:var(--card-2);border:1px solid var(--border);color:var(--text);padding:13px 20px;border-radius:10px;font-weight:700;cursor:pointer}
   .tx-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)}
   .tx-item:last-child{border-bottom:none}
@@ -199,7 +200,7 @@
       <form id="txForm">
         <div class="row"><input type="text" id="txAmount" placeholder="Số tiền (VD: 500000)" inputmode="numeric" required><input type="date" id="txDate" required></div>
         <div class="row"><select id="txType"><option value="1">Góp tiền (+)</option><option value="-1">Rút tiền (−)</option></select><input type="text" id="txNote" placeholder="Ghi chú (tuỳ chọn)"></div>
-        <button type="submit" class="btn-primary">Thêm giao dịch</button>
+        <button type="submit" class="btn-primary" id="submitTxBtn">Thêm giao dịch</button>
       </form>
     </section>
 
@@ -216,14 +217,14 @@
       <label>Tên fund</label><input type="text" id="fundNameInput" placeholder="VD: Mua xe, Du lịch..." required>
       <label>Mục tiêu (VNĐ)</label><input type="text" id="fundTargetInput" placeholder="VD: 50000000" inputmode="numeric" required>
       <label>Hạn chót (tuỳ chọn)</label><input type="date" id="fundDeadlineInput">
-      <div class="modal-actions"><button type="button" class="btn-ghost" id="cancelFundBtn">Hủy</button><button type="submit" class="btn-primary">Lưu</button></div>
+      <div class="modal-actions"><button type="button" class="btn-ghost" id="cancelFundBtn">Hủy</button><button type="submit" class="btn-primary" id="saveFundBtn">Lưu</button></div>
     </form>
   </div>
 </div>
 
 <script>
 /* ============================================================
-   ⚙️ CẤU HÌNH GOOGLE SHEETS - ĐÃ ĐIỀN LINK CỦA BẠN
+   ⚙️ CẤU HÌNH GOOGLE SHEETS
    ============================================================ */
 const GOOGLE_SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbw9eA3xIhBHoxZZGJcmipnl9RliSvK844TBd_QhkrUh-CQMc6r9PInv_KKY5a9nLyA6/exec';
 
@@ -253,7 +254,6 @@ async function loadDataFromSheet() {
   if (isLoading) return;
   isLoading = true;
   try {
-    // Thêm ?t=... để tránh trình duyệt cache dữ liệu cũ
     const response = await fetch(`${GOOGLE_SHEET_API_URL}?t=${Date.now()}`);
     if (!response.ok) throw new Error("Lỗi mạng");
     const data = await response.json();
@@ -263,21 +263,27 @@ async function loadDataFromSheet() {
     state.activeFundId = state.funds[0]?.id || null;
   } catch (e) {
     console.error('Lỗi tải dữ liệu:', e);
-    toast('❌ Không thể tải dữ liệu. Kiểm tra lại Link Apps Script.');
+    // toast('❌ Không thể tải dữ liệu. Kiểm tra lại Link Apps Script.'); // Bỏ comment nếu cần
   } finally {
     isLoading = false;
   }
 }
 
 async function sendActionToSheet(action, payload) {
-  const response = await fetch(GOOGLE_SHEET_API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // Dùng text/plain để tránh lỗi CORS
-    body: JSON.stringify({ action, payload })
-  });
-  const result = await response.json();
-  if (result.error) throw new Error(result.error);
-  return result;
+  try {
+    // Dùng mode: 'no-cors' để lách lỗi CORS của Google
+    await fetch(GOOGLE_SHEET_API_URL, {
+      method: 'POST',
+      mode: 'no-cors', 
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action, payload })
+    });
+    // Vì mode no-cors không trả về nội dung, ta chỉ cần đợi 1 nhịp để server kịp ghi
+    return true; 
+  } catch (e) {
+    console.error("Lỗi gửi dữ liệu:", e);
+    throw new Error("Lỗi kết nối");
+  }
 }
 
 /* ============ BACKGROUND & ANIMATIONS ============ */
@@ -424,7 +430,7 @@ function renderTxList(fund, txs) {
   const el = document.getElementById('txList');
   if (!txs.length) { el.innerHTML = '<p class="empty">🐣 Chưa có giao dịch nào. Thêm giao dịch đầu tiên nào! 🚀</p>'; return; }
   el.innerHTML = [...txs].reverse().map(t => `<div class="tx-item"><div class="tx-info"><span class="tx-date">${new Date(t.date).toLocaleDateString('vi-VN')}</span><span class="tx-note">${escapeHtml(t.note || '(không ghi chú)')}</span></div><div class="tx-right"><span class="tx-amount ${t.amount >= 0 ? 'plus' : 'minus'}">${t.amount >= 0 ? '+' : '−'}${fmtMoney(Math.abs(t.amount))}</span><button class="icon-btn" data-del="${t.id}" title="Xóa">✕</button></div></div>`).join('');
-  el.querySelectorAll('[data-del]').forEach(btn => { btn.onclick = async () => { if (confirm('Xóa giao dịch này?')) { try { await sendActionToSheet('deleteTx', { id: btn.dataset.del }); await loadDataFromSheet(); renderAll(); toast('Đã xóa giao dịch'); } catch(e) { toast('Lỗi khi xóa'); console.error(e); } } }; });
+  el.querySelectorAll('[data-del]').forEach(btn => { btn.onclick = async () => { if (confirm('Xóa giao dịch này?')) { try { await sendActionToSheet('deleteTx', { id: btn.dataset.del }); await loadDataFromSheet(); renderAll(); toast('Đã xóa giao dịch'); } catch(e) { toast('Lỗi khi xóa'); } } }; });
 }
 function renderAll() {
   const fund = getActiveFund(); renderTabs();
@@ -455,15 +461,23 @@ document.getElementById('txForm').onsubmit = async e => {
   const amount = Number(amountRaw) * Number(document.getElementById('txType').value);
   const date = document.getElementById('txDate').value || todayStr();
   const note = document.getElementById('txNote').value.trim(); if (!amount) return;
+  
+  const btn = document.getElementById('submitTxBtn');
+  btn.disabled = true; btn.textContent = "Đang lưu...";
+  
   const before = fundStats(fund).percent;
   try {
     await sendActionToSheet('addTx', { id: uid(), fundId: fund.id, amount, date, note });
+    // Đợi 0.5s để Google Sheets kịp xử lý
+    await new Promise(r => setTimeout(r, 500));
     await loadDataFromSheet();
+    
     const after = fundStats(fund).percent;
     if (amount > 0) { dropCoin(); piggyHappy(); setTimeout(sparkleBurst, 200); } else piggyHappy();
     checkMilestone(before, after);
     e.target.reset(); document.getElementById('txDate').value = todayStr(); renderAll(); toast('✅ Đã thêm giao dịch');
-  } catch (err) { toast('❌ Lỗi: ' + err.message); console.error(err); }
+  } catch (err) { toast('❌ Lỗi kết nối'); } 
+  finally { btn.disabled = false; btn.textContent = "Thêm giao dịch"; }
 };
 
 /* ============ FUND MODAL & ACTIONS ============ */
@@ -484,13 +498,17 @@ document.getElementById('deleteFundBtn').onclick = async () => {
   const f = getActiveFund(); if (!f) return;
   if (!confirm(`Xóa fund "${f.name}" và toàn bộ giao dịch?`)) return;
   try { await sendActionToSheet('deleteFund', { id: f.id }); await loadDataFromSheet(); renderAll(); toast('Đã xóa fund'); }
-  catch (err) { toast('❌ Lỗi khi xóa'); console.error(err); }
+  catch (err) { toast('❌ Lỗi khi xóa'); }
 };
 document.getElementById('fundForm').onsubmit = async e => {
   e.preventDefault();
   const name = document.getElementById('fundNameInput').value.trim();
   const target = Number(document.getElementById('fundTargetInput').value.replace(/\D/g, ''));
   const deadline = document.getElementById('fundDeadlineInput').value || null; if (!name || !target) return;
+
+  const btn = document.getElementById('saveFundBtn');
+  btn.disabled = true; btn.textContent = "Đang lưu...";
+
   try {
     if (editingFundId) { 
       await sendActionToSheet('updateFund', { id: editingFundId, name, target, deadline }); 
@@ -500,8 +518,10 @@ document.getElementById('fundForm').onsubmit = async e => {
       await sendActionToSheet('addFund', newFund); 
       state.activeFundId = newFund.id; 
     }
+    await new Promise(r => setTimeout(r, 500));
     await loadDataFromSheet(); closeFundModal(); piggyHappy(); renderAll(); toast('✅ Đã lưu fund');
-  } catch (err) { toast('❌ Lỗi: ' + err.message); console.error(err); }
+  } catch (err) { toast('❌ Lỗi kết nối'); } 
+  finally { btn.disabled = false; btn.textContent = "Lưu"; }
 };
 
 /* ============ WIRE UP & INIT ============ */
