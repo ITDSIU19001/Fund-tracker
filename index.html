@@ -3,12 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>💰 Fund Tracker (Supabase)</title>
-<!-- Nạp thư viện Supabase JS -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<title>💰 Fund Tracker (Google Sheets)</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
-  /* ===== GIỮ NGUYÊN TOÀN BỘ CSS CŨ ===== */
   :root{
     --bg:#0b1120; --card:#131c2e; --card-2:#1a2740;
     --text:#e2e8f0; --muted:#94a3b8;
@@ -136,7 +133,7 @@
   <header>
     <div class="brand">💰 Fund Tracker</div>
     <div class="header-actions">
-      <button class="icon-btn" id="refreshBtn" title="Làm mới dữ liệu từ Supabase">🔄</button>
+      <button class="icon-btn" id="refreshBtn" title="Làm mới dữ liệu từ Google Sheets">🔄</button>
       <button class="icon-btn" id="themeBtn" title="Đổi theme">☀️</button>
     </div>
   </header>
@@ -148,7 +145,7 @@
       <div class="hero-top">
         <div>
           <h2 id="fundName">Đang tải...</h2>
-          <p class="muted" id="fundDeadline">Kết nối Supabase...</p>
+          <p class="muted" id="fundDeadline">Kết nối Google Sheets...</p>
         </div>
         <div class="hero-actions">
           <button id="editFundBtn" style="display:none">Sửa</button>
@@ -226,12 +223,9 @@
 
 <script>
 /* ============================================================
-   ⚙️ CẤU HÌNH SUPABASE - THAY BẰNG THÔNG TIN CỦA BẠN
+   ⚙️ CẤU HÌNH GOOGLE SHEETS - ĐÃ ĐIỀN LINK CỦA BẠN
    ============================================================ */
-const SUPABASE_URL = 'https://vkukenylebioenwmzpue.supabase.co'; // <-- DÁN PROJECT URL VÀO ĐÂY
-const SUPABASE_ANON_KEY = 'sb_publishable_t6aPaALVCV75RlH1KPOGoA_BQU2O7Oh'; // <-- DÁN ANON KEY VÀO ĐÂY
-
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const GOOGLE_SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbw9eA3xIhBHoxZZGJcmipnl9RliSvK844TBd_QhkrUh-CQMc6r9PInv_KKY5a9nLyA6/exec';
 
 /* ============ STATE ============ */
 let state = { funds: [], transactions: [], activeFundId: null, theme: 'dark', chartMode: 'cumulative' };
@@ -254,80 +248,39 @@ function toast(msg, ms = 2500) {
   setTimeout(() => el.remove(), ms + 400);
 }
 
-/* ============ SUPABASE DATA LAYER ============ */
-async function loadDataFromSupabase() {
+/* ============ GOOGLE SHEETS DATA LAYER ============ */
+async function loadDataFromSheet() {
   if (isLoading) return;
   isLoading = true;
   try {
-    const { data: funds, error: fundsError } = await supabase
-      .from('funds')
-      .select('*')
-      .order('created_at', { ascending: true });
-
-    if (fundsError) throw fundsError;
-
-    const { data: transactions, error: txError } = await supabase
-      .from('transactions')
-      .select('*')
-      .order('date', { ascending: true });
-
-    if (txError) throw txError;
-
-    state.funds = funds || [];
-    state.transactions = (transactions || []).map(t => ({
-      ...t,
-      amount: Number(t.amount),
-      date: t.date,
-      note: t.note || ''
-    }));
+    // Thêm ?t=... để tránh trình duyệt cache dữ liệu cũ
+    const response = await fetch(`${GOOGLE_SHEET_API_URL}?t=${Date.now()}`);
+    if (!response.ok) throw new Error("Lỗi mạng");
+    const data = await response.json();
+    
+    state.funds = data.funds || [];
+    state.transactions = data.transactions || [];
     state.activeFundId = state.funds[0]?.id || null;
   } catch (e) {
     console.error('Lỗi tải dữ liệu:', e);
-    toast('❌ Không thể tải dữ liệu từ Supabase. Kiểm tra Console.');
+    toast('❌ Không thể tải dữ liệu. Kiểm tra lại Link Apps Script.');
   } finally {
     isLoading = false;
   }
 }
 
-async function addFundToDB(fund) {
-  const { data, error } = await supabase.from('funds').insert({
-    id: fund.id,
-    name: fund.name,
-    target: fund.target,
-    deadline: fund.deadline || null
-  }).select().single();
-  if (error) throw error;
-  return data;
+async function sendActionToSheet(action, payload) {
+  const response = await fetch(GOOGLE_SHEET_API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // Dùng text/plain để tránh lỗi CORS
+    body: JSON.stringify({ action, payload })
+  });
+  const result = await response.json();
+  if (result.error) throw new Error(result.error);
+  return result;
 }
 
-async function updateFundInDB(id, updates) {
-  const { error } = await supabase.from('funds').update(updates).eq('id', id);
-  if (error) throw error;
-}
-
-async function deleteFundFromDB(id) {
-  const { error } = await supabase.from('funds').delete().eq('id', id);
-  if (error) throw error;
-}
-
-async function addTransactionToDB(tx) {
-  const { data, error } = await supabase.from('transactions').insert({
-    id: tx.id,
-    fund_id: tx.fundId,
-    amount: tx.amount,
-    date: tx.date,
-    note: tx.note || null
-  }).select().single();
-  if (error) throw error;
-  return data;
-}
-
-async function deleteTransactionFromDB(id) {
-  const { error } = await supabase.from('transactions').delete().eq('id', id);
-  if (error) throw error;
-}
-
-/* ============ BACKGROUND & ANIMATIONS (GIỮ NGUYÊN) ============ */
+/* ============ BACKGROUND & ANIMATIONS ============ */
 function createBgDecorations() {
   const container = document.getElementById('bgDecorations');
   const emojis = ['🪙','💰','💵','⭐','💖','✨','🌟','💫'];
@@ -371,7 +324,7 @@ function updatePiggyScale(percent) {
   mascot.classList.toggle('complete', percent >= 100);
 }
 
-/* ============ DATA QUERIES (LOGIC GIỮ NGUYÊN) ============ */
+/* ============ DATA QUERIES ============ */
 function getActiveFund() {
   let f = state.funds.find(f => f.id === state.activeFundId);
   if (!f && state.funds.length) { f = state.funds[0]; state.activeFundId = f.id; }
@@ -382,7 +335,7 @@ function fundTxs(fundId) {
 }
 function fundStats(fund) {
   const txs = fundTxs(fund.id);
-  const saved = txs.reduce((s, t) => s + t.amount, 0);
+  const saved = txs.reduce((s, t) => s + Number(t.amount), 0);
   const percent = fund.target > 0 ? (saved / fund.target) * 100 : 0;
   const remaining = Math.max(0, fund.target - saved);
   let avgPerMonth = 0;
@@ -390,7 +343,7 @@ function fundStats(fund) {
   if (positives.length) {
     const first = new Date(positives[0].date); const now = new Date();
     const months = Math.max(1, (now.getFullYear() - first.getFullYear()) * 12 + (now.getMonth() - first.getMonth()) + 1);
-    avgPerMonth = positives.reduce((s, t) => s + t.amount, 0) / months;
+    avgPerMonth = positives.reduce((s, t) => s + Number(t.amount), 0) / months;
   }
   let eta = 'Chưa đủ dữ liệu';
   if (remaining === 0 && fund.target > 0) eta = 'Đã xong 🎉';
@@ -402,7 +355,7 @@ function fundStats(fund) {
   return { saved, percent, remaining, avgPerMonth, eta, txs };
 }
 
-/* ============ RENDER (LOGIC GIỮ NGUYÊN) ============ */
+/* ============ RENDER ============ */
 function renderTabs() {
   const el = document.getElementById('fundTabs');
   if (!state.funds.length) { el.innerHTML = ''; return; }
@@ -453,10 +406,10 @@ function renderChart(fund, txs) {
   const textColor = isDark ? '#94a3b8' : '#64748b';
   let labels = [], data = [];
   if (state.chartMode === 'cumulative') {
-    let cum = 0; labels = txs.map(t => new Date(t.date).toLocaleDateString('vi-VN')); data = txs.map(t => (cum += t.amount));
+    let cum = 0; labels = txs.map(t => new Date(t.date).toLocaleDateString('vi-VN')); data = txs.map(t => (cum += Number(t.amount)));
     if (!labels.length) { labels = [todayStr()]; data = [0]; }
   } else {
-    const map = new Map(); txs.forEach(t => { const key = t.date.slice(0, 7); map.set(key, (map.get(key) || 0) + t.amount); });
+    const map = new Map(); txs.forEach(t => { const key = t.date.slice(0, 7); map.set(key, (map.get(key) || 0) + Number(t.amount)); });
     const keys = [...map.keys()].sort(); labels = keys.map(k => { const [y, m] = k.split('-'); return `${m}/${y}`; }); data = keys.map(k => map.get(k));
     if (!labels.length) { labels = [todayStr().slice(0, 7).split('-').reverse().join('/')]; data = [0]; }
   }
@@ -471,7 +424,7 @@ function renderTxList(fund, txs) {
   const el = document.getElementById('txList');
   if (!txs.length) { el.innerHTML = '<p class="empty">🐣 Chưa có giao dịch nào. Thêm giao dịch đầu tiên nào! 🚀</p>'; return; }
   el.innerHTML = [...txs].reverse().map(t => `<div class="tx-item"><div class="tx-info"><span class="tx-date">${new Date(t.date).toLocaleDateString('vi-VN')}</span><span class="tx-note">${escapeHtml(t.note || '(không ghi chú)')}</span></div><div class="tx-right"><span class="tx-amount ${t.amount >= 0 ? 'plus' : 'minus'}">${t.amount >= 0 ? '+' : '−'}${fmtMoney(Math.abs(t.amount))}</span><button class="icon-btn" data-del="${t.id}" title="Xóa">✕</button></div></div>`).join('');
-  el.querySelectorAll('[data-del]').forEach(btn => { btn.onclick = async () => { if (confirm('Xóa giao dịch này?')) { try { await deleteTransactionFromDB(btn.dataset.del); await loadDataFromSupabase(); renderAll(); toast('Đã xóa giao dịch'); } catch(e) { toast('Lỗi khi xóa'); console.error(e); } } }; });
+  el.querySelectorAll('[data-del]').forEach(btn => { btn.onclick = async () => { if (confirm('Xóa giao dịch này?')) { try { await sendActionToSheet('deleteTx', { id: btn.dataset.del }); await loadDataFromSheet(); renderAll(); toast('Đã xóa giao dịch'); } catch(e) { toast('Lỗi khi xóa'); console.error(e); } } }; });
 }
 function renderAll() {
   const fund = getActiveFund(); renderTabs();
@@ -504,8 +457,8 @@ document.getElementById('txForm').onsubmit = async e => {
   const note = document.getElementById('txNote').value.trim(); if (!amount) return;
   const before = fundStats(fund).percent;
   try {
-    await addTransactionToDB({ id: uid(), fundId: fund.id, amount, date, note });
-    await loadDataFromSupabase();
+    await sendActionToSheet('addTx', { id: uid(), fundId: fund.id, amount, date, note });
+    await loadDataFromSheet();
     const after = fundStats(fund).percent;
     if (amount > 0) { dropCoin(); piggyHappy(); setTimeout(sparkleBurst, 200); } else piggyHappy();
     checkMilestone(before, after);
@@ -530,7 +483,7 @@ document.getElementById('editFundBtn').onclick = () => { const f = getActiveFund
 document.getElementById('deleteFundBtn').onclick = async () => {
   const f = getActiveFund(); if (!f) return;
   if (!confirm(`Xóa fund "${f.name}" và toàn bộ giao dịch?`)) return;
-  try { await deleteFundFromDB(f.id); await loadDataFromSupabase(); renderAll(); toast('Đã xóa fund'); }
+  try { await sendActionToSheet('deleteFund', { id: f.id }); await loadDataFromSheet(); renderAll(); toast('Đã xóa fund'); }
   catch (err) { toast('❌ Lỗi khi xóa'); console.error(err); }
 };
 document.getElementById('fundForm').onsubmit = async e => {
@@ -539,9 +492,15 @@ document.getElementById('fundForm').onsubmit = async e => {
   const target = Number(document.getElementById('fundTargetInput').value.replace(/\D/g, ''));
   const deadline = document.getElementById('fundDeadlineInput').value || null; if (!name || !target) return;
   try {
-    if (editingFundId) { await updateFundInDB(editingFundId, { name, target, deadline }); }
-    else { const newFund = { id: uid(), name, target, deadline }; await addFundToDB(newFund); state.activeFundId = newFund.id; }
-    await loadDataFromSupabase(); closeFundModal(); piggyHappy(); renderAll(); toast('✅ Đã lưu fund');
+    if (editingFundId) { 
+      await sendActionToSheet('updateFund', { id: editingFundId, name, target, deadline }); 
+    }
+    else { 
+      const newFund = { id: uid(), name, target, deadline }; 
+      await sendActionToSheet('addFund', newFund); 
+      state.activeFundId = newFund.id; 
+    }
+    await loadDataFromSheet(); closeFundModal(); piggyHappy(); renderAll(); toast('✅ Đã lưu fund');
   } catch (err) { toast('❌ Lỗi: ' + err.message); console.error(err); }
 };
 
@@ -549,13 +508,13 @@ document.getElementById('fundForm').onsubmit = async e => {
 document.getElementById('chartToggle').onclick = e => { const btn = e.target.closest('button'); if (!btn) return; state.chartMode = btn.dataset.mode; renderAll(); };
 function applyTheme() { document.documentElement.dataset.theme = state.theme; document.getElementById('themeBtn').textContent = state.theme === 'dark' ? '☀️' : '🌙'; }
 document.getElementById('themeBtn').onclick = () => { state.theme = state.theme === 'dark' ? 'light' : 'dark'; applyTheme(); renderAll(); };
-document.getElementById('refreshBtn').onclick = async () => { await loadDataFromSupabase(); renderAll(); toast('🔄 Đã làm mới dữ liệu'); };
+document.getElementById('refreshBtn').onclick = async () => { await loadDataFromSheet(); renderAll(); toast('🔄 Đã làm mới dữ liệu'); };
 
 (async function init() {
   applyTheme(); createBgDecorations();
   attachMoneyFormat(document.getElementById('txAmount')); attachMoneyFormat(document.getElementById('fundTargetInput'));
   document.getElementById('txDate').value = todayStr();
-  await loadDataFromSupabase();
+  await loadDataFromSheet();
   renderAll();
   document.getElementById('mascot').addEventListener('click', () => { piggyHappy(); sparkleBurst(); });
 })();
